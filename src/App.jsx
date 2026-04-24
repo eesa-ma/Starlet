@@ -1965,7 +1965,7 @@ function App() {
               <h2 className="text-3d">Transport</h2>
               <div className="transport-list">
                 <div className="transport-item">
-                  <div className="transport-icon"><img src="/icons/metro.svg" alt="metro" style={{ width: '40px' }} /></div>
+                  <div className="transport-icon"><img src="/icons/location.svg" alt="metro" style={{ width: '40px' }} /></div>
                   <div className="transport-info">
                     <h3>Metro (Line 5)</h3>
                     <p>From <strong>Central Station</strong> to <strong>Innovation Park</strong></p>
@@ -1973,7 +1973,7 @@ function App() {
                   </div>
                 </div>
                 <div className="transport-item">
-                  <div className="transport-icon"><img src="/icons/bus.svg" alt="bus" style={{ width: '40px' }} /></div>
+                  <div className="transport-icon"><img src="/icons/users.svg" alt="bus" style={{ width: '40px' }} /></div>
                   <div className="transport-info">
                     <h3>Shuttle Bus</h3>
                     <p>From <strong>City Plaza</strong> to <strong>Venue Entrance</strong></p>
@@ -1981,7 +1981,7 @@ function App() {
                   </div>
                 </div>
                 <div className="transport-item">
-                  <div className="transport-icon"><img src="/icons/car.svg" alt="car" style={{ width: '40px' }} /></div>
+                  <div className="transport-icon"><img src="/icons/location.svg" alt="car" style={{ width: '40px' }} /></div>
                   <div className="transport-info">
                     <h3>Car / Ride Share</h3>
                     <p>Drop-off at <strong>Main Gate</strong></p>
