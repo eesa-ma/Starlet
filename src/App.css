@@ -887,24 +887,33 @@ header.header-minimal {
 }
 
 /* Danger / Rules Section */
-.rules-section .section-content {
-    background: #ffebeb;
-    border: 5px dashed #cc0000;
-    box-shadow: 15px 15px 0px #cc0000;
+.rules-hazard-box {
+    padding: 12px !important;
+    background: repeating-linear-gradient(
+        45deg,
+        #ffcc00,
+        #ffcc00 20px,
+        #000 20px,
+        #000 40px
+    );
+    background-size: 56.5px 56.5px;
+    animation: hazardMove 1s linear infinite;
+    border-radius: 30px;
+    box-shadow: 15px 15px 0px var(--text-navy);
+    border: none !important;
+    overflow: hidden;
 }
 
-.hazard-stripes {
+.rules-hazard-inner {
+    background: #ffebeb;
+    padding: 3rem 8%;
+    border-radius: 20px;
     width: 100%;
-    height: 30px;
-    background: repeating-linear-gradient(45deg,
-            #ffcc00,
-            #ffcc00 20px,
-            #000 20px,
-            #000 40px);
-    margin: -4rem -4rem 2rem -4rem;
-    width: calc(100% + 8rem);
-    border-radius: 35px 35px 0 0;
-    border-bottom: 3px solid #000;
+}
+
+@keyframes hazardMove {
+    from { background-position: 0 0; }
+    to { background-position: 56.5px 0; }
 }
 
 .warning-title {

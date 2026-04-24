@@ -406,27 +406,28 @@ function App() {
                       </div>
                     </div>
                   ) : section.type === 'rules' ? (
-                    <div className="section-content">
-                      <div className="hazard-stripes"></div>
-                      <h2 className="text-3d warning-title" style={{ fontSize: '3rem' }}>
-                        <img src="/icons/warning.svg" className="title-icon" alt="warning" /> RULES & REGS
-                      </h2>
-                      <div className="rules-grid">
-                        <div className="warning-item" style={{ "--r": -1 }}>
-                          <div className="warning-icon"><img src="/icons/warning.svg" className="card-icon" alt="warning" /></div>
-                          <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        </div>
-                        <div className="warning-item" style={{ "--r": 1.5 }}>
-                          <div className="warning-icon"><img src="/icons/users.svg" className="card-icon" alt="users" /></div>
-                          <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        </div>
-                        <div className="warning-item" style={{ "--r": -0.8 }}>
-                          <div className="warning-icon"><img src="/icons/calendar.svg" className="card-icon" alt="calendar" /></div>
-                          <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                        </div>
-                        <div className="warning-item" style={{ "--r": 1.2 }}>
-                          <div className="warning-icon"><img src="/icons/warning.svg" className="card-icon" alt="warning" /></div>
-                          <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <div className="section-content rules-hazard-box">
+                      <div className="rules-hazard-inner">
+                        <h2 className="text-3d warning-title" style={{ fontSize: '3rem' }}>
+                          <img src="/icons/warning.svg" className="title-icon" alt="warning" /> RULES & REGS
+                        </h2>
+                        <div className="rules-grid">
+                          <div className="warning-item" style={{ "--r": -1 }}>
+                            <div className="warning-icon"><img src="/icons/warning.svg" className="card-icon" alt="warning" /></div>
+                            <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                          </div>
+                          <div className="warning-item" style={{ "--r": 1.5 }}>
+                            <div className="warning-icon"><img src="/icons/users.svg" className="card-icon" alt="users" /></div>
+                            <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                          </div>
+                          <div className="warning-item" style={{ "--r": -0.8 }}>
+                            <div className="warning-icon"><img src="/icons/calendar.svg" className="card-icon" alt="calendar" /></div>
+                            <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                          </div>
+                          <div className="warning-item" style={{ "--r": 1.2 }}>
+                            <div className="warning-icon"><img src="/icons/warning.svg" className="card-icon" alt="warning" /></div>
+                            <p><strong>LOREM IPSUM:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                          </div>
                         </div>
                       </div>
                     </div>
