@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './App.css';
 import { supabase } from './supabaseClient';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const sectionsData = [
 
@@ -155,6 +157,7 @@ function App() {
   const [needsTeaming, setNeedsTeaming] = useState(false);
   const [activeAlert, setActiveAlert] = useState(null);
   const [systemIssues, setSystemIssues] = useState([]);
+  const [certsReleased, setCertsReleased] = useState(false);
 
   const galleryRef = useRef(null);
   const requestRef = useRef();
@@ -220,7 +223,7 @@ function App() {
       if (session) {
         setIsLoggedIn(true);
         fetchProfile(session.user.id);
-        
+
         // If the event is PASSWORD_RECOVERY, switch to reset view
         if (event === 'PASSWORD_RECOVERY') {
           setActiveView('reset-password');
@@ -327,7 +330,7 @@ function App() {
       .select('*')
       .order('full_name');
     if (data) setAllUsers(data);
-    
+
     const { data: issues } = await supabase
       .from('system_issues')
       .select('*, profiles(full_name)')
@@ -376,17 +379,17 @@ function App() {
 
       // 2. Shuffle
       const shuffled = [...singles].sort(() => Math.random() - 0.5);
-      
+
       // 3. Group into 4s
       const groupSize = 4;
-      
+
       for (let i = 0; i < shuffled.length; i += groupSize) {
         const group = shuffled.slice(i, i + groupSize);
         if (group.length < 2) {
           // Add leftover to previous group logic would go here, 
           // for now we'll just form teams of 2-4
         }
-        
+
         const squadNumber = Math.floor(Math.random() * 10000);
         const teamName = `Stellar Squad ${squadNumber}`;
 
@@ -403,11 +406,11 @@ function App() {
         for (const user of group) {
           await supabase
             .from('profiles')
-            .update({ 
-              team_id: newTeam.id, 
+            .update({
+              team_id: newTeam.id,
               team_name: teamName,
               team_status: 'team',
-              needs_teaming: false 
+              needs_teaming: false
             })
             .eq('id', user.id);
         }
@@ -424,14 +427,14 @@ function App() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           team_id: null,
-          team_name: null, 
+          team_name: null,
           team_status: 'single',
-          needs_teaming: true 
+          needs_teaming: true
         })
         .eq('id', session.user.id);
-      
+
       if (error) throw error;
       alert('You have left the team and are now back in the solo pool.');
       fetchProfile(session.user.id);
@@ -446,7 +449,7 @@ function App() {
         .from('profiles')
         .update({ selected_track: trackTitle })
         .eq('id', session.user.id);
-      
+
       if (error) throw error;
       alert('Track selection saved!');
       fetchProfile(session.user.id);
@@ -484,7 +487,7 @@ function App() {
           const { error: uploadError } = await supabase.storage
             .from('avatars')
             .upload(fileName, signupAvatar);
-          
+
           if (!uploadError) {
             const { data: publicUrlData } = supabase.storage
               .from('avatars')
@@ -501,10 +504,11 @@ function App() {
             .select('id')
             .eq('name', teamName)
             .single();
-          
+
           if (existingTeam) {
             finalTeamId = existingTeam.id;
           } else {
+
             const { data: newTeam } = await supabase
               .from('teams')
               .insert([{ name: teamName }])
@@ -595,7 +599,7 @@ function App() {
       const { error } = await supabase
         .from('system_issues')
         .insert([{ user_id: session.user.id, description: desc }]);
-      
+
       if (error) throw error;
       alert('Issue reported successfully. The admin team has been notified.');
     } catch (error) {
@@ -607,12 +611,12 @@ function App() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
-          team_status: 'single', 
-          needs_teaming: true 
+        .update({
+          team_status: 'single',
+          needs_teaming: true
         })
         .eq('id', session.user.id);
-      
+
       if (error) throw error;
       alert('You have been added to the auto-teaming pool! Check back later for your squad assignment.');
       fetchProfile(session.user.id);
@@ -627,6 +631,36 @@ function App() {
     else {
       setIsLoggedIn(false);
       setActiveView('landing');
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    const input = document.getElementById('certificate-render');
+    if (!input) return;
+
+    try {
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#fffdf5'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Starlet5_Certificate_${user.name?.replace(/\s+/g, '_') || 'Participant'}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate certificate. Please try again.');
     }
   };
 
@@ -1200,9 +1234,9 @@ function App() {
                         <input type="file" hidden accept="image/*" onChange={handleSignupAvatarChange} />
                       </label>
                     </div>
-                    <select 
-                      name="userRole" 
-                      className="auth-select" 
+                    <select
+                      name="userRole"
+                      className="auth-select"
                       value={signupRole}
                       onChange={(e) => setSignupRole(e.target.value)}
                     >
@@ -1215,7 +1249,7 @@ function App() {
                     <input name="fullName" type="text" placeholder="Full Name" required />
                     <input name="email" type="email" placeholder="Email Address" required />
                     <input name="password" type="password" placeholder="Password" required />
-                    
+
                     {signupRole === 'mentor' ? (
                       <>
                         <input name="roleTitle" type="text" placeholder="Professional Title (e.g. Senior Architect)" required />
@@ -1224,36 +1258,36 @@ function App() {
                     ) : (
                       <>
                         <input name="college" type="text" placeholder="College or Organization Name" required />
-                        
+
                         <div className="teaming-options">
                           <label className="teaming-label">Participation Type:</label>
                           <div className="teaming-radios">
                             <label>
-                              <input 
-                                type="radio" 
-                                name="teamStatus" 
-                                value="single" 
-                                checked={teamStatus === 'single'} 
-                                onChange={() => setTeamStatus('single')} 
+                              <input
+                                type="radio"
+                                name="teamStatus"
+                                value="single"
+                                checked={teamStatus === 'single'}
+                                onChange={() => setTeamStatus('single')}
                               /> Solo
                             </label>
                             <label>
-                              <input 
-                                type="radio" 
-                                name="teamStatus" 
-                                value="team" 
-                                checked={teamStatus === 'team'} 
-                                onChange={() => setTeamStatus('team')} 
+                              <input
+                                type="radio"
+                                name="teamStatus"
+                                value="team"
+                                checked={teamStatus === 'team'}
+                                onChange={() => setTeamStatus('team')}
                               /> Existing Team
                             </label>
                           </div>
 
                           {teamStatus === 'single' ? (
                             <label className="teaming-checkbox">
-                              <input 
-                                type="checkbox" 
-                                checked={needsTeaming} 
-                                onChange={(e) => setNeedsTeaming(e.target.checked)} 
+                              <input
+                                type="checkbox"
+                                checked={needsTeaming}
+                                onChange={(e) => setNeedsTeaming(e.target.checked)}
                               /> Want us to find a team for you?
                             </label>
                           ) : (
@@ -1262,7 +1296,7 @@ function App() {
                         </div>
                       </>
                     )}
-                    
+
                     <textarea name="bio" placeholder={signupRole === 'mentor' ? "Tell us about your mentoring experience..." : "Tell us about yourself and what you want to build..."} required></textarea>
                   </div>
                 </div>
@@ -1272,7 +1306,7 @@ function App() {
                 <>
                   <input name="email" type="email" placeholder="Email Address" required />
                   <input name="password" type="password" placeholder="Password" required />
-                  <div 
+                  <div
                     style={{ textAlign: 'right', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--pink-primary)', fontWeight: 'bold', marginTop: '-0.5rem' }}
                     onClick={() => setActiveView('forgot-password')}
                   >
@@ -1280,7 +1314,7 @@ function App() {
                   </div>
                 </>
               )}
-              
+
               <button type="submit" className="join-btn" style={{ marginTop: '2rem', width: '100%' }}>
                 {activeView === 'login' ? 'LOGIN TO CONSOLE' : 'INITIALIZE REGISTRATION'}
               </button>
@@ -1368,9 +1402,16 @@ function App() {
                 </div>
               </div>
 
-              <div className="admin-actions-bar" style={{ marginBottom: '3rem' }}>
+              <div className="admin-actions-bar" style={{ marginBottom: '3rem', display: 'flex', gap: '1rem' }}>
                 <button className="join-btn" onClick={handleRunAutoTeaming}>
                   RUN AUTO-TEAMING ALGORITHM
+                </button>
+                <button 
+                  className="join-btn" 
+                  style={{ background: certsReleased ? '#4caf50' : 'var(--pink-primary)' }}
+                  onClick={handleAllocateCertificates}
+                >
+                  {certsReleased ? 'CERTIFICATES ALLOCATED ✓' : 'ALLOCATE CERTIFICATES'}
                 </button>
               </div>
 
@@ -1421,7 +1462,7 @@ function App() {
                             <p>{issue.description}</p>
                             <small>{new Date(issue.created_at).toLocaleString()}</small>
                           </div>
-                          <button className="btn-small accept" onClick={() => {/* Logic to close issue */}}>
+                          <button className="btn-small accept" onClick={() => {/* Logic to close issue */ }}>
                             RESOLVE
                           </button>
                         </div>
@@ -1730,11 +1771,140 @@ function App() {
                     <div className="support-btn issue" onClick={handleReportIssue}>
                       REPORT AN ISSUE
                     </div>
+                    {certsReleased && (
+                      <div 
+                        className="support-btn mentor" 
+                        style={{ 
+                          background: 'linear-gradient(135deg, #ffd700, #ff8c00)', 
+                          color: '#001f3f',
+                          gridColumn: 'span 2'
+                        }} 
+                        onClick={() => window.open(`/certificate/template.html?name=${encodeURIComponent(user.name)}`, '_blank')}
+                      >
+                        🎓 CLAIM ACHIEVEMENT CERTIFICATE
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </>
           )}
+        </div>
+      ) : activeView === 'certificate' ? (
+        <div 
+          className="certificate-view-screen" 
+          style={{ 
+            minHeight: '100vh', 
+            padding: '2rem', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center' 
+          }}
+        >
+          {/* Sticky Controls Header */}
+          <div 
+            className="certificate-sticky-header" 
+            style={{
+              position: 'sticky',
+              top: '20px',
+              zIndex: 100,
+              background: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+              padding: '1rem 2rem',
+              borderRadius: '20px',
+              border: '3px solid #001f3f',
+              boxShadow: '10px 10px 0px #001f3f',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '90%',
+              maxWidth: '1123px',
+              marginBottom: '3rem'
+            }}
+          >
+            <h2 className="text-3d" style={{ margin: 0 }}>YOUR ACHIEVEMENT</h2>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="join-btn" onClick={handleDownloadCertificate}>DOWNLOAD PDF</button>
+              <button className="btn-secondary" onClick={() => setActiveView('profile')}>BACK TO PROFILE</button>
+            </div>
+          </div>
+          
+          {/* Certificate Display Area */}
+          <div 
+            className="certificate-display-wrapper" 
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              perspective: '1000px', 
+              paddingBottom: '4rem' 
+            }}
+          >
+            <div className="certificate-container-live" id="certificate-render" style={{
+              width: '1123px',
+              height: '794px',
+              backgroundColor: '#fffdf5',
+              backgroundImage: 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+              backgroundSize: '30px 30px',
+              border: '8px solid #001f3f',
+              borderRadius: '40px',
+              position: 'relative',
+              boxShadow: '25px 25px 0px #ff4d94',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '60px 80px',
+              boxSizing: 'border-box',
+              fontFamily: "'Outfit', sans-serif",
+              overflow: 'hidden'
+            }}>
+              {/* Watermark */}
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-15deg)', fontFamily: "'Fredoka One', cursive", fontSize: '11rem', color: 'rgba(0, 31, 63, 0.03)', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 1, letterSpacing: '4rem' }}>STARLET</div>
+              
+              {/* Decorative Star */}
+              <div style={{ position: 'absolute', top: '30px', left: '30px', width: '60px', height: '60px', backgroundColor: '#ffd700', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', border: '3px solid #001f3f', transform: 'rotate(-15deg)', zIndex: 2 }}></div>
+
+              {/* Header Branding */}
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', zIndex: 2 }}>
+                <div style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid #001f3f', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '5px 5px 0px #ff4d94', overflow: 'hidden' }}>
+                  <img src="/brand/Logo.png" alt="Starlet" style={{ width: '85%', height: 'auto' }} />
+                </div>
+                <div style={{ width: '85px', height: '85px', borderRadius: '15px', border: '3px solid #001f3f', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '5px 5px 0px #ff4d94', overflow: 'hidden' }}>
+                  <img src="/brand/Mind Empowered.jpeg" alt="ME" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              </div>
+              
+              {/* Title Section */}
+              <div style={{ textAlign: 'center', zIndex: 2 }}>
+                <h1 style={{ fontFamily: "'Fredoka One', cursive", fontSize: '5.5rem', color: '#001f3f', margin: 0, textTransform: 'uppercase', textShadow: '4px 4px 0px #ffd700' }}>Certificate</h1>
+                <p style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ff4d94', letterSpacing: '15px', marginTop: '-5px', textTransform: 'uppercase' }}>OF EXCELLENCE</p>
+              </div>
+
+              {/* Recipient Details */}
+              <div style={{ marginTop: '20px', fontSize: '1.2rem', color: '#001f3f', fontWeight: 500, letterSpacing: '2px', textTransform: 'uppercase', zIndex: 2 }}>
+                This award is officially presented to
+              </div>
+
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '4rem', fontWeight: 900, color: '#001f3f', margin: '5px 0', padding: '10px 40px', borderBottom: '4px solid #ffd700', zIndex: 2, minWidth: '500px', minHeight: '60px' }}>
+                {user.name || ''}
+              </div>
+
+              {/* Achievement Body */}
+              <div style={{ maxWidth: '850px', margin: '15px auto 40px auto', textAlign: 'center', fontSize: '1.3rem', lineHeight: '1.8', color: '#444', fontWeight: 400, zIndex: 2 }}>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Your contribution to <strong style={{ color: '#ff4d94', fontWeight: 800 }}>Starlet 5.0</strong> has left an indelible mark on the galaxy of innovators.
+              </div>
+
+              {/* Footer Row */}
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingBottom: '15px', paddingLeft: '80px', paddingRight: '80px', boxSizing: 'border-box', zIndex: 2 }}>
+                <div style={{ width: '350px', textAlign: 'center' }}>
+                  <div style={{ height: '4px', background: '#001f3f', width: '280px', margin: '0 auto 15px auto', borderRadius: '2px' }}></div>
+                  <strong style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.4rem', color: '#001f3f', display: 'block', fontWeight: 900, letterSpacing: '1px', lineHeight: 1 }}>MIND EMPOWERED</strong>
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'rgba(0, 31, 63, 0.4)', textTransform: 'uppercase', letterSpacing: '1px', lineHeight: 1 }}>
+                  ISSUE DATE: JULY 11, 2024
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : activeView === 'venue' ? (
         <div className="venue-container">
