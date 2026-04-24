@@ -79,6 +79,15 @@ header {
     gap: 2rem;
 }
 
+header.header-minimal {
+    justify-content: flex-start;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom: none;
+    position: absolute; /* Logo will now scroll with the content */
+}
+
 .nav-links {
     display: flex;
     gap: 2rem;
@@ -200,6 +209,34 @@ header {
     display: flex;
     align-items: center;
     gap: 1.5rem;
+}
+
+.sound-toggle {
+    background: #fff;
+    border: 3px solid var(--text-navy);
+    border-radius: 12px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    box-shadow: 4px 4px 0px var(--text-navy);
+    transition: all 0.2s ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.sound-toggle:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--pink-primary);
+    background: var(--yellow-star);
+}
+
+.sound-toggle:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px var(--text-navy);
 }
 
 .desktop-auth-btns {
@@ -480,6 +517,40 @@ header {
 
 .about-section {
     background: #f0fff4 !important;
+}
+
+.about-section .section-visual-small {
+    background: #fff;
+    border: 5px solid var(--text-navy);
+    box-shadow: 15px 15px 0px var(--blue-shadow);
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 450px;
+    height: 450px;
+    border-radius: 40px;
+}
+
+.about-section .section-visual-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 0;
+    transition: transform 0.3s ease;
+}
+
+.about-section .section-visual-small:hover img {
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .about-section .section-visual-small {
+        max-width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        padding: 1rem;
+    }
 }
 
 /* Soft Green */
@@ -866,6 +937,38 @@ header {
     background: var(--yellow-star);
     color: var(--text-navy);
     transform: scale(1.05);
+}
+
+.main-organizer {
+    grid-column: span 2;
+    background: #fff;
+    border: 4px solid var(--text-navy) !important;
+    padding: 2.5rem !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    border-radius: 30px !important;
+    box-shadow: 15px 15px 0px var(--blue-shadow);
+    transition: all 0.3s ease;
+}
+
+.main-organizer:hover {
+    transform: translateY(-5px);
+    box-shadow: 20px 20px 0px var(--pink-primary);
+}
+
+.main-organizer img {
+    width: 220px;
+    height: auto;
+    border-radius: 15px;
+    border: 2px solid #eee;
+}
+
+.main-organizer .badge-main {
+    margin: 0;
+    font-size: 0.8rem;
+    transform: rotate(-2deg);
 }
 
 /* Polaroid Gallery */
@@ -1498,6 +1601,40 @@ footer {
     font-weight: 700;
 }
 
+.sound-toggle-large {
+    background: #fff;
+    border: 3px solid var(--text-navy);
+    border-radius: 20px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 6px 6px 0px var(--text-navy);
+    transition: all 0.2s ease;
+    font-family: 'Fredoka One', cursive;
+    color: var(--text-navy);
+}
+
+.sound-toggle-large:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px var(--pink-primary);
+}
+
+.toggle-switch {
+    background: #eee;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    border: 2px solid var(--text-navy);
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch.active {
+    background: var(--yellow-star);
+    color: var(--text-navy);
+}
+
 .upload-overlay {
     position: absolute;
     bottom: 10px;
@@ -2001,5 +2138,221 @@ footer {
 
     100% {
         width: 100%;
+    }
+}
+
+/* Venue Screen Styles */
+.venue-container {
+    width: 100%;
+    min-height: 100vh;
+    padding: 120px 8%;
+    background: var(--bg-cream);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.venue-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.venue-header h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.venue-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 3rem;
+    width: 100%;
+    max-width: 1400px;
+}
+
+.venue-card {
+    background: #fff;
+    border: 4px solid var(--text-navy);
+    border-radius: 30px;
+    padding: 2.5rem;
+    box-shadow: 12px 12px 0px var(--blue-shadow);
+}
+
+.venue-card h2 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    -webkit-text-stroke: 0;
+}
+
+.map-placeholder {
+    width: 100%;
+    height: 350px;
+    background: #f0f7ff;
+    border: 3px dashed var(--blue-shadow);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.map-icon {
+    width: 60px;
+    height: 60px;
+    opacity: 0.5;
+}
+
+.venue-address {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--blue-shadow);
+    font-size: 0.9rem;
+}
+
+.transport-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.transport-item {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px dashed #eee;
+}
+
+.transport-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.transport-icon {
+    font-size: 2rem;
+    background: var(--bg-cream);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15px;
+    border: 2px solid var(--text-navy);
+}
+
+.transport-info h3 {
+    font-family: 'Fredoka One', cursive;
+    color: var(--pink-primary);
+    margin-bottom: 0.3rem;
+}
+
+.transport-info p {
+    font-size: 1rem;
+    color: var(--text-navy);
+}
+
+.transport-info small {
+    color: var(--text-muted);
+}
+
+.gallery-section-venue {
+    background: #fff;
+    box-shadow: 12px 12px 0px var(--yellow-star);
+}
+
+.transport-section {
+    grid-column: span 2;
+    box-shadow: 12px 12px 0px var(--pink-primary);
+}
+
+.venue-image-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 1.5rem;
+    padding: 1rem 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
+}
+
+.venue-image-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.venue-img-placeholder {
+    flex: 0 0 100%;
+    aspect-ratio: 16/9;
+    background: #f8f9fa;
+    border: 3px dashed var(--blue-shadow);
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-muted);
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-image: radial-gradient(var(--grid-color) 2px, transparent 2px);
+    background-size: 20px 20px;
+    scroll-snap-align: center;
+}
+
+.venue-img-placeholder:hover {
+    background-color: var(--bg-cream);
+    border-style: solid;
+    transform: translateY(-5px);
+    color: var(--pink-primary);
+}
+
+.nav-icon-btn {
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    background: #fff;
+    border: 3px solid var(--text-navy);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 4px 4px 0px var(--text-navy);
+}
+
+.nav-icon-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 6px 6px 0px var(--pink-primary);
+}
+
+.nav-icon-btn.small {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-family: 'Fredoka One', cursive;
+}
+
+.gallery-nav-btns {
+    display: flex;
+    gap: 0.8rem;
+}
+
+@media (max-width: 900px) {
+    .venue-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .gallery-section-venue, .transport-section {
+        grid-column: span 1;
+    }
+
+    .venue-header h1 {
+        font-size: 3rem;
     }
 }

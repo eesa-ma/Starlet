@@ -6,8 +6,8 @@ const sectionsData = [
     id: 1,
     type: 'about',
     title: 'About Mind Empowered',
-    content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-    image: '/brand/Logo.png'
+    content: 'Mind Empowered is dedicated to nurturing creativity and technical excellence in the next generation of innovators. Through events like Starlet 5.0, we provide a platform for students to challenge themselves, learn new skills, and build meaningful solutions for the future.',
+    image: '/brand/Mind Empowered.gif'
   },
   {
     id: 2,
@@ -93,8 +93,32 @@ function App() {
     bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. ✨',
     stack: ['React', 'CSS', 'Figma']
   });
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+
+  const playClickSound = () => {
+    if (!isSoundEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {}
+  };
 
   const sectionRefs = useRef([]);
+  const galleryRef = useRef(null);
   const requestRef = useRef();
 
   const animate = () => {
@@ -138,15 +162,35 @@ function App() {
     const fadeTimer = setTimeout(() => setFadeOut(true), 3000);
     const removeTimer = setTimeout(() => setShowSplash(false), 3800);
 
+    const handleGlobalClick = (e) => {
+      const target = e.target.closest('button, a, .join-btn, .login-btn, .nav-link, .logo-circle, .mentor-card, .faq-item');
+      if (target) {
+        playClickSound();
+      }
+    };
+
+    window.addEventListener('click', handleGlobalClick);
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('click', handleGlobalClick);
       clearTimeout(fadeTimer);
       clearTimeout(removeTimer);
     };
-  }, []);
+  }, [isSoundEnabled]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollGallery = (direction) => {
+    if (galleryRef.current) {
+      const scrollAmount = galleryRef.current.offsetWidth;
+      galleryRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
   };
 
   // Floating Sparkle Positions
@@ -196,7 +240,10 @@ function App() {
             </div>
             <p className="handwritten splash-text">Igniting your creativity... ✨</p>
           </div>
-          <div className="splash-footer handwritten">Mind Empowered Initiative</div>
+          <div className="splash-footer handwritten">
+            <img src="/brand/Mind Empowered.gif" alt="Mind Empowered" style={{ height: '30px', verticalAlign: 'middle', marginRight: '10px', borderRadius: '5px' }} />
+            A Mind Empowered Initiative
+          </div>
         </div>
       )}
 
@@ -205,62 +252,78 @@ function App() {
       <div className="sparkle" style={{ top: `${sparkleTop - 10}%`, left: `${sparkleLeft + 20}%`, animationDelay: '0.5s' }}>✧</div>
       <div className="sparkle" style={{ top: `${sparkleTop + 15}%`, left: `${sparkleLeft - 15}%`, animationDelay: '1s' }}>✦</div>
 
-      <header>
-        <div className="logo-circle" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>
-          <img src="/public/brand/Logo.png" alt="Starlet Logo" onError={(e) => { e.target.src = '/brand/Logo.png' }} />
+      <header className={activeView !== 'landing' ? 'header-minimal' : ''}>
+        <div className="logo-circle" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
+          <img src="/brand/Logo.png" alt="Starlet Logo" />
         </div>
 
-        <nav className={`nav-links ${isMenuOpen ? 'mobile-active' : ''}`}>
-          <a href="#mission" className="nav-link" onClick={() => setIsMenuOpen(false)}>Mission</a>
-          <a href="#tracks" className="nav-link" onClick={() => setIsMenuOpen(false)}>Tracks</a>
-          <a href="#timeline" className="nav-link" onClick={() => setIsMenuOpen(false)}>Timeline</a>
-          <a href="#hall-of-fame" className="nav-link" onClick={() => setIsMenuOpen(false)}>Hall of Fame</a>
-          <a href="#rules" className="nav-link" onClick={() => setIsMenuOpen(false)}>Rules</a>
-          <a href="#sponsors" className="nav-link" onClick={() => setIsMenuOpen(false)}>Sponsors</a>
+        {activeView === 'landing' && (
+          <>
+            <nav className={`nav-links ${isMenuOpen ? 'mobile-active' : ''}`}>
+              <a href="#mission" className="nav-link" onClick={() => setIsMenuOpen(false)}>Mission</a>
+              <a href="#tracks" className="nav-link" onClick={() => setIsMenuOpen(false)}>Tracks</a>
+              <a href="#timeline" className="nav-link" onClick={() => setIsMenuOpen(false)}>Timeline</a>
+              <a href="#hall-of-fame" className="nav-link" onClick={() => setIsMenuOpen(false)}>Hall of Fame</a>
+              <a href="#rules" className="nav-link" onClick={() => setIsMenuOpen(false)}>Rules</a>
+              <a href="#sponsors" className="nav-link" onClick={() => setIsMenuOpen(false)}>Sponsors</a>
 
-          <div className="mobile-auth-wrapper">
-            {isLoggedIn ? (
-              <div className="mobile-profile-link" onClick={() => { setActiveView('profile'); setIsMenuOpen(false); }}>
-                <img src="/icons/user-profile.svg" alt="profile" />
-                <span>My Profile</span>
+              <div className="mobile-auth-wrapper">
+                {isLoggedIn ? (
+                  <div className="mobile-profile-link" onClick={() => { setActiveView('profile'); setIsMenuOpen(false); }}>
+                    <img src="/icons/user-profile.svg" alt="profile" />
+                    <span>My Profile</span>
+                  </div>
+                ) : (
+                  <div className="mobile-auth-btns">
+                    <div className="login-btn" onClick={() => { setActiveView('login'); setIsMenuOpen(false); }}>LOGIN</div>
+                    <div className="join-btn" onClick={() => { setActiveView('signup'); setIsMenuOpen(false); }}>SIGN UP!</div>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="mobile-auth-btns">
-                <div className="login-btn" onClick={() => { setActiveView('login'); setIsMenuOpen(false); }}>LOGIN</div>
-                <div className="join-btn" onClick={() => { setActiveView('signup'); setIsMenuOpen(false); }}>SIGN UP!</div>
+            </nav>
+
+            <div className="header-actions">
+              <div className="desktop-auth-btns">
+                {isLoggedIn ? (
+                  <>
+                    <img
+                      src="/icons/location.svg"
+                      className="nav-icon-btn"
+                      alt="venue"
+                      onClick={() => setActiveView('venue')}
+                      title="Venue Details"
+                    />
+                    <img
+                      src="/icons/user-profile.svg"
+                      className="nav-icon-btn"
+                      alt="profile"
+                      onClick={() => setActiveView('profile')}
+                      title="My Profile"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="login-btn" onClick={() => setActiveView('login')}>LOGIN</div>
+                    <div className="join-btn" onClick={() => setActiveView('signup')}>SIGN UP!</div>
+                  </>
+                )}
               </div>
-            )}
-          </div>
-        </nav>
 
-        <div className="header-actions">
-          <div className="desktop-auth-btns">
-            {isLoggedIn ? (
-              <img
-                src="/icons/user-profile.svg"
-                className="nav-profile-btn"
-                alt="profile"
-                onClick={() => setActiveView('profile')}
-              />
-            ) : (
-              <>
-                <div className="login-btn" onClick={() => setActiveView('login')}>LOGIN</div>
-                <div className="join-btn" onClick={() => setActiveView('signup')}>SIGN UP!</div>
-              </>
-            )}
-          </div>
-
-          <div className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <img src={isMenuOpen ? "/icons/close.svg" : "/icons/hamburger.svg"} alt="menu" />
-          </div>
-        </div>
+              <div className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                <img src={isMenuOpen ? "/icons/close.svg" : "/icons/hamburger.svg"} alt="menu" />
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       {activeView === 'landing' ? (
         <>
           <main>
             <section className="hero">
-              <div className="badge-main">MIND EMPOWERED PRESENTS</div>
+              <div className="badge-main">
+                MIND EMPOWERED PRESENTS
+              </div>
               <h1 className="text-3d">STARLET 5.0</h1>
               <div className="subtitle-large">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
@@ -348,7 +411,12 @@ function App() {
                     <div className="section-content">
                       <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
                       <div className="sponsor-grid">
-                        {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div className="sponsor-card main-organizer">
+                          <span className="badge-main">MAIN ORGANIZER</span>
+                          <img src="/brand/Mind Empowered.gif" alt="Mind Empowered" />
+                          <h3 className="text-3d" style={{ fontSize: '1.2rem' }}>MIND EMPOWERED</h3>
+                        </div>
+                        {[1, 2, 3, 4].map(i => (
                           <div key={i} className="sponsor-placeholder">
                             YOUR LOGO HERE
                           </div>
@@ -536,7 +604,7 @@ function App() {
               </div>
 
               <div className="footer-copy-mini">
-                &copy; 2026 Starlet 5.0 | A Mind Empowered Initiative
+                &copy; 2026 Starlet 5.0 | A <img src="/brand/Mind Empowered.gif" alt="Mind Empowered" style={{ height: '20px', verticalAlign: 'middle', margin: '0 5px', borderRadius: '3px' }} /> Mind Empowered Initiative
               </div>
             </div>
           </footer>
@@ -579,7 +647,15 @@ function App() {
                 placeholder="Tell us about yourself..."
               />
             </div>
-            <button className="logout-btn" onClick={() => { setIsLoggedIn(false); setActiveView('landing'); }}>LOGOUT</button>
+            <div className="profile-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
+              <div className="sound-toggle-large" onClick={() => setIsSoundEnabled(!isSoundEnabled)}>
+                <span>Volume Control</span>
+                <div className={`toggle-switch ${isSoundEnabled ? 'active' : ''}`}>
+                  {isSoundEnabled ? "🔊 ON" : "🔈 OFF"}
+                </div>
+              </div>
+              <button className="logout-btn" onClick={() => { setIsLoggedIn(false); setActiveView('landing'); }}>LOGOUT</button>
+            </div>
             <div onClick={() => setActiveView('landing')} style={{ marginTop: '2rem', cursor: 'pointer', color: 'var(--blue-shadow)' }}>← Back to Home</div>
           </div>
           <div className="profile-info">
@@ -607,6 +683,84 @@ function App() {
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Lorem ipsum dolor sit amet!</p>
             </div>
           </div>
+        </div>
+      ) : activeView === 'venue' ? (
+        <div className="venue-container">
+          <div className="venue-header">
+            <h1 className="text-3d">VENUE DETAILS</h1>
+            <p className="handwritten">Everything you need to know about where the magic happens! ✨</p>
+          </div>
+
+          <div className="venue-grid">
+            <div className="venue-card map-section">
+              <h2 className="text-3d">Location</h2>
+              <div className="map-placeholder">
+                <img src="/icons/location.svg" alt="map" className="map-icon" />
+                <p>Google Maps Embed would go here</p>
+                <div className="venue-address">
+                  <strong>Starlet Innovation Hub</strong><br />
+                  123 Nebula Lane, Tech City, ST 45678
+                </div>
+              </div>
+              <div className="join-btn" style={{ marginTop: '1.5rem', textAlign: 'center' }}>OPEN IN GOOGLE MAPS</div>
+            </div>
+
+            <div className="venue-card gallery-section-venue">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 className="text-3d" style={{ margin: 0 }}>Venue Gallery</h2>
+                <div className="gallery-nav-btns">
+                  <button className="nav-icon-btn small" onClick={() => scrollGallery('left')}>←</button>
+                  <button className="nav-icon-btn small" onClick={() => scrollGallery('right')}>→</button>
+                </div>
+              </div>
+              <div className="venue-image-grid" ref={galleryRef}>
+                <div className="venue-img-placeholder">
+                  <span>Main Entrance Preview</span>
+                </div>
+                <div className="venue-img-placeholder">
+                  <span>Hacking Hall Preview</span>
+                </div>
+                <div className="venue-img-placeholder">
+                  <span>Chill Zone Preview</span>
+                </div>
+                <div className="venue-img-placeholder">
+                  <span>Workshop Area Preview</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="venue-card transport-section">
+              <h2 className="text-3d">Transport</h2>
+              <div className="transport-list">
+                <div className="transport-item">
+                  <div className="transport-icon">🚇</div>
+                  <div className="transport-info">
+                    <h3>Metro (Line 5)</h3>
+                    <p>From <strong>Central Station</strong> to <strong>Innovation Park</strong></p>
+                    <small>Runs every 10 minutes. 5-minute walk to venue.</small>
+                  </div>
+                </div>
+                <div className="transport-item">
+                  <div className="transport-icon">🚌</div>
+                  <div className="transport-info">
+                    <h3>Shuttle Bus</h3>
+                    <p>From <strong>City Plaza</strong> to <strong>Venue Entrance</strong></p>
+                    <small>Complimentary for Starlet attendees. Hourly service.</small>
+                  </div>
+                </div>
+                <div className="transport-item">
+                  <div className="transport-icon">🚗</div>
+                  <div className="transport-info">
+                    <h3>Car / Ride Share</h3>
+                    <p>Drop-off at <strong>Main Gate</strong></p>
+                    <small>Free parking available for the first 100 cars.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div onClick={() => setActiveView('landing')} style={{ marginTop: '3rem', cursor: 'pointer', color: 'var(--blue-shadow)', textAlign: 'center', width: '100%' }}>← Back to Home</div>
         </div>
       ) : null}
 
