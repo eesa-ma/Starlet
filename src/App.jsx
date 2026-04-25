@@ -1222,15 +1222,21 @@ function App() {
                       <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
                       <p style={{ marginBottom: '2rem', maxWidth: '800px' }}>{section.content}</p>
                       <div className="tracks-grid-interactive">
-                        {tracksData.map(track => (
-                          <div key={track.id} className="track-card-mini" onClick={() => setSelectedTrack(track)}>
-                            <div className="track-card-inner">
-                              <span className="track-number">#{track.id}</span>
-                              <h3>{track.title}</h3>
-                              <div className="view-details-tag">VIEW CHALLENGE →</div>
-                            </div>
+                        {problemStatements.length === 0 ? (
+                          <div className="empty-state" style={{ gridColumn: '1 / -1', color: '#fff' }}>
+                            <p>Innovation tracks are currently being finalized. Stay tuned!</p>
                           </div>
-                        ))}
+                        ) : (
+                          problemStatements.map((track, i) => (
+                            <div key={track.id} className="track-card-mini" onClick={() => setSelectedTrack({ ...track, index: i + 1 })}>
+                              <div className="track-card-inner">
+                                <span className="track-number">#{i + 1}</span>
+                                <h3>{track.title}</h3>
+                                <div className="view-details-tag">VIEW CHALLENGE →</div>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   ) : section.type === 'sponsors' ? (
@@ -2423,10 +2429,10 @@ function App() {
             <button className="modal-close" onClick={() => setSelectedTrack(null)}>×</button>
             <div className="track-modal-inner">
               <div className="track-modal-header">
-                <span className="track-id-badge">CHALLENGE #{selectedTrack.id}</span>
+                <span className="track-id-badge">CHALLENGE #{selectedTrack.index}</span>
                 <h2 className="text-3d">{selectedTrack.title}</h2>
-                {user.role === 'attendee' && (
-                  <button className="join-btn" onClick={() => handleSelectTrack(selectedTrack.title)}>
+                {user.role === 'attendee' && !user.problemStatementId && (
+                  <button className="join-btn" onClick={() => { handleSelectPS(selectedTrack.id); setSelectedTrack(null); }}>
                     CHOOSE THIS TRACK
                   </button>
                 )}
@@ -2434,7 +2440,7 @@ function App() {
               <div className="track-modal-body">
                 <div className="track-description">
                   <h3>The Challenge</h3>
-                  <p>{selectedTrack.details}</p>
+                  <p>{selectedTrack.description}</p>
                 </div>
                 <div className="track-meta">
                   <div className="meta-item">
@@ -2443,7 +2449,7 @@ function App() {
                   </div>
                   <div className="meta-item">
                     <strong>Category:</strong>
-                    <span>Software / Hardware</span>
+                    <span>{selectedTrack.track_category || 'Software / Hardware'}</span>
                   </div>
                 </div>
               </div>
