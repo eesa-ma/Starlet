@@ -103,7 +103,6 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
-  const [selectedMentor, setSelectedMentor] = useState(null);
   const [faqLimit, setFaqLimit] = useState(3);
   const [visibleSections, setVisibleSections] = useState(new Set());
 
