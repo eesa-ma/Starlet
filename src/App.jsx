@@ -159,6 +159,7 @@ function App() {
   const [systemIssues, setSystemIssues] = useState([]);
   const [certsReleased, setCertsReleased] = useState(false);
   const [venues, setVenues] = useState([]);
+  const [problemStatements, setProblemStatements] = useState([]);
 
   const galleryRef = useRef(null);
   const requestRef = useRef();
@@ -235,8 +236,9 @@ function App() {
       }
     });
 
-    // 3. Fetch venues
+    // 3. Fetch venues and problem statements
     fetchVenues();
+    fetchProblemStatements();
 
     // 4. Realtime listener for venues
     const venueChannel = supabase
@@ -274,6 +276,7 @@ function App() {
           teamId: data.team_id || null,
           teamName: data.team_name || '',
           selectedTrack: data.selected_track || '',
+          problemStatementId: data.problem_statement_id || null,
           socials: {
             github: data.github_url || '',
             linkedin: data.linkedin_url || '',
@@ -292,6 +295,11 @@ function App() {
       .select('*')
       .order('created_at', { ascending: true });
     if (data) setVenues(data);
+  };
+
+  const fetchProblemStatements = async () => {
+    const { data } = await supabase.from('problem_statements').select('*').order('created_at');
+    if (data) setProblemStatements(data);
   };
 
   const [mentorRequests, setMentorRequests] = useState([]);
@@ -562,6 +570,48 @@ function App() {
     const { error } = await supabase.from('venues').delete().eq('id', venueId);
     if (error) alert(error.message);
     else fetchVenues();
+  };
+
+  const handleAddProblemStatement = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const { error } = await supabase.from('problem_statements').insert([{
+      title: formData.get('title'),
+      description: formData.get('description'),
+      track_category: formData.get('category')
+    }]);
+    if (error) alert(error.message);
+    else {
+      alert('Problem statement added!');
+      fetchProblemStatements();
+      e.target.reset();
+    }
+  };
+
+  const handleDeleteProblemStatement = async (id) => {
+    if (!confirm('Are you sure you want to remove this problem statement?')) return;
+    const { error } = await supabase.from('problem_statements').delete().eq('id', id);
+    if (error) alert(error.message);
+    else fetchProblemStatements();
+  };
+
+  const handleAdminUpdateUserPS = async (userId, psId) => {
+    const { error } = await supabase.from('profiles').update({ problem_statement_id: psId }).eq('id', userId);
+    if (error) alert(error.message);
+    else {
+      alert('Attendee track updated!');
+      fetchAllUsers();
+    }
+  };
+
+  const handleSelectPS = async (psId) => {
+    if (!psId) return;
+    const { error } = await supabase.from('profiles').update({ problem_statement_id: psId }).eq('id', session.user.id);
+    if (error) alert(error.message);
+    else {
+      alert('Selection locked! Contact admin to change.');
+      fetchProfile(session.user.id);
+    }
   };
 
   const handleLeaveTeam = async () => {
@@ -1703,6 +1753,41 @@ function App() {
                 </div>
               </div>
 
+              {/* PROBLEM STATEMENT MANAGEMENT */}
+              <div className="admin-panel" style={{ marginBottom: '4rem' }}>
+                <h2 className="text-3d" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Problem Statement Library</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2rem' }}>
+                  <div className="admin-card">
+                    <h3>Current Statements</h3>
+                    <div className="admin-issues-list" style={{ marginTop: '1rem' }}>
+                      {problemStatements.length === 0 ? (
+                        <p>Library is empty.</p>
+                      ) : (
+                        problemStatements.map(ps => (
+                          <div key={ps.id} className="approval-card" style={{ marginBottom: '1rem' }}>
+                            <div className="user-meta">
+                              <strong>{ps.title}</strong>
+                              <small style={{ display: 'block', color: 'var(--blue-shadow)' }}>{ps.track_category}</small>
+                              <p style={{ fontSize: '0.8rem', marginTop: '0.3rem' }}>{ps.description}</p>
+                            </div>
+                            <button className="btn-small delete" onClick={() => handleDeleteProblemStatement(ps.id)}>REMOVE</button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div className="admin-card">
+                    <h3>Add New Statement</h3>
+                    <form className="auth-form" onSubmit={handleAddProblemStatement} style={{ marginTop: '1rem' }}>
+                      <input name="title" type="text" placeholder="Statement Title" required />
+                      <input name="category" type="text" placeholder="Track Category (e.g. AI, Health)" required />
+                      <textarea name="description" placeholder="Short description of the challenge..." required></textarea>
+                      <button type="submit" className="join-btn" style={{ width: '100%' }}>ADD TO LIBRARY</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
               <div className="admin-main-grid">
                 <div className="admin-panel mentor-queue">
                   <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>System Reports</h2>
@@ -1757,6 +1842,7 @@ function App() {
                           <th>Role</th>
                           <th>Status</th>
                           <th>Venue</th>
+                          <th>Selected Track</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
@@ -1786,6 +1872,20 @@ function App() {
                                     <option key={v.id} value={v.name}>{v.name}</option>
                                   ))}
                                   <option value="Waitlisted/Overflow">Waitlisted</option>
+                                </select>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="table-venue-select">
+                                <select 
+                                  className="admin-select-small"
+                                  value={u.problem_statement_id || ''}
+                                  onChange={(e) => handleAdminUpdateUserPS(u.id, e.target.value)}
+                                >
+                                  <option value="">No Selection</option>
+                                  {problemStatements.map(ps => (
+                                    <option key={ps.id} value={ps.id}>{ps.title}</option>
+                                  ))}
                                 </select>
                               </div>
                             </td>
@@ -2004,10 +2104,25 @@ function App() {
                 <div className="profile-field">
                   <label>Selected Innovation Track</label>
                   <div className="field-value">
-                    <strong>{user.selectedTrack || 'No track chosen yet'}</strong>
-                    <button className="btn-small" style={{ marginLeft: '1rem', border: '2px solid var(--text-navy)' }} onClick={() => setActiveView('landing')}>
-                      CHANGE TRACK
-                    </button>
+                    {user.problemStatementId ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        <strong style={{ color: 'var(--text-navy)' }}>
+                          {problemStatements.find(ps => ps.id === user.problemStatementId)?.title || 'Selected'}
+                        </strong>
+                        <small style={{ color: 'var(--text-muted)' }}>🔒 Selection Locked (Contact admin to change)</small>
+                      </div>
+                    ) : (
+                      <select 
+                        className="admin-select-small" 
+                        style={{ padding: '0.8rem', fontSize: '1rem' }}
+                        onChange={(e) => handleSelectPS(e.target.value)}
+                      >
+                        <option value="">Choose a Problem Statement...</option>
+                        {problemStatements.map(ps => (
+                          <option key={ps.id} value={ps.id}>{ps.title}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 </div>
                 <div className="profile-field">
