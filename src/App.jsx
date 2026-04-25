@@ -446,13 +446,74 @@ function App() {
     }
   };
 
-  const handleAllocateCertificates = async () => {
-    try {
-      // Logic to release certificates for all participants
-      setCertsReleased(true);
-      alert('Certificates have been successfully released for all participants!');
     } catch (error) {
       alert('Failed to release certificates: ' + error.message);
+    }
+  };
+
+  const handleSortVenues = async () => {
+    try {
+      setLoading(true);
+      // 1. Fetch current data
+      const { data: attendees } = await supabase.from('profiles').select('*').eq('user_role', 'attendee');
+      const { data: currentVenues } = await supabase.from('venues').select('*');
+      
+      if (!attendees || !currentVenues || currentVenues.length === 0) {
+        setLoading(false);
+        return alert('Missing attendees or venue data to perform sorting.');
+      }
+
+      // 2. Initialize tracking
+      const venueLimits = {};
+      currentVenues.forEach(v => { 
+        venueLimits[v.name] = { capacity: parseInt(v.capacity) || 0, count: 0 }; 
+      });
+      
+      // 3. Group by Team
+      const teams = {};
+      attendees.forEach(a => {
+        const tid = a.team_id || `solo-${a.id}`;
+        if (!teams[tid]) teams[tid] = [];
+        teams[tid].push(a);
+      });
+
+      // 4. Sort (Iterate teams)
+      const updates = [];
+      for (const tid in teams) {
+        const members = teams[tid];
+        const size = members.length;
+        // Use the preference of the first member, or default to the first available venue
+        const preference = members[0].preferred_venue || currentVenues[0].name;
+
+        let assignedVenue = null;
+        
+        // Try preferred first
+        if (venueLimits[preference] && (venueLimits[preference].count + size) <= venueLimits[preference].capacity) {
+          assignedVenue = preference;
+        } else {
+          // Try any other venue with space
+          assignedVenue = Object.keys(venueLimits).find(name => (venueLimits[name].count + size) <= venueLimits[name].capacity);
+        }
+
+        if (assignedVenue) {
+          venueLimits[assignedVenue].count += size;
+          members.forEach(m => updates.push({ id: m.id, venue: assignedVenue }));
+        } else {
+          members.forEach(m => updates.push({ id: m.id, venue: 'Waitlisted/Overflow' }));
+        }
+      }
+
+      // 5. Update Database in chunks to avoid rate limits
+      for (const update of updates) {
+        await supabase.from('profiles').update({ venue: update.venue }).eq('id', update.id);
+      }
+
+      alert('Venue sorting complete! Capacities respected and teams kept together.');
+      fetchAllUsers();
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      alert('Error during sorting: ' + error.message);
     }
   };
 
@@ -463,7 +524,8 @@ function App() {
       name: formData.get('name'),
       address: formData.get('address'),
       google_maps_url: formData.get('mapsUrl'),
-      description: formData.get('description')
+      description: formData.get('description'),
+      capacity: parseInt(formData.get('capacity')) || 0
     };
 
     const { error } = await supabase.from('venues').insert([updates]);
@@ -1484,12 +1546,13 @@ function App() {
                       <input name="name" type="text" placeholder="Venue Name" required />
                       <input name="address" type="text" placeholder="Full Address" required />
                       <input name="mapsUrl" type="url" placeholder="Google Maps URL" required />
+                      <input name="capacity" type="number" placeholder="Max Capacity (e.g. 60)" required />
                       <textarea name="description" placeholder="Description / Accessibility Details" required></textarea>
                       <button type="submit" className="join-btn" style={{ width: '100%' }}>ADD VENUE</button>
                     </form>
                   </div>
                   <div className="admin-card">
-                    <h3>Current Venues</h3>
+                    <h3>Current Venues & Capacity</h3>
                     <div className="admin-issues-list" style={{ marginTop: '1rem' }}>
                       {venues.length === 0 ? (
                         <p>No venues added yet.</p>
@@ -1498,7 +1561,7 @@ function App() {
                           <div key={v.id} className="approval-card" style={{ marginBottom: '1rem' }}>
                             <div className="user-meta">
                               <strong>{v.name}</strong>
-                              <p style={{ fontSize: '0.8rem' }}>{v.address}</p>
+                              <p style={{ fontSize: '0.8rem' }}>Capacity: {v.capacity} | {v.address}</p>
                             </div>
                             <button className="btn-small delete" onClick={() => handleDeleteVenue(v.id)}>
                               REMOVE
@@ -1507,6 +1570,15 @@ function App() {
                         ))
                       )}
                     </div>
+                    {venues.length > 0 && (
+                      <button 
+                        className="join-btn" 
+                        style={{ width: '100%', marginTop: '2rem', background: 'var(--blue-shadow)' }}
+                        onClick={handleSortVenues}
+                      >
+                        RUN VENUE SORTING ALGORITHM
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
