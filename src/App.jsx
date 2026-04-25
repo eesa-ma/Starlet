@@ -93,6 +93,20 @@ const mentorsData = Array.from({ length: 12 }, (_, i) => ({
   image: "/icons/user-profile.svg"
 }));
 
+const galleryCaptions = [
+  "Late Night Coding", "Idea Storming", "Winning Moment", "Pizza Fuel", 
+  "The Eureka Moment", "Team Bonding", "Pitch Practice", "Designing the Future",
+  "Focus Mode", "Collaborative Spirit", "Debugging Life", "Coffee & Code",
+  "Innovative Thinking", "Prototyping Fun", "The Presentation", "Celebrating Tech",
+  "Hackathon Hustle", "Building Dreams", "Tech Talk", "Creative Solutions",
+  "The Final Push", "Mentorship Magic", "Code & Creativity", "Future Leaders",
+  "Hackathon Highs", "Problem Solving", "Digital Craftsmanship", "Inspiration Everywhere",
+  "Starlet Vibes", "Empowered Innovators", "Breaking Barriers", "The Next Big Thing",
+  "Coding Journey", "Tech Enthusiasts", "Sparking Ideas", "Minds in Action",
+  "The Winner's Circle", "Collaboration Wins", "Learning & Growing", "Tech Community",
+  "Starlet 5.0 Magic", "Unforgettable Moments"
+];
+
 function App() {
 
   const [session, setSession] = useState(null);
@@ -169,6 +183,7 @@ function App() {
   const [mentorRequestModal, setMentorRequestModal] = useState(null);
   const [projectSubmissions, setProjectSubmissions] = useState([]);
   const [mySubmission, setMySubmission] = useState(null);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
 
   const galleryRef = useRef(null);
   const requestRef = useRef();
@@ -1445,20 +1460,41 @@ function App() {
                     </div>
                   ) : section.type === 'gallery' ? (
                     <div className="section-content">
-                      <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
-                      <div className="gallery-grid">
-                        {[
-                          "Lorem Ipsum 1", "Lorem Ipsum 2", "Lorem Ipsum 3", "Lorem Ipsum 4",
-                          "Lorem Ipsum 5", "Lorem Ipsum 6", "Lorem Ipsum 7", "Lorem Ipsum 8",
-                          "Lorem Ipsum 9", "Lorem Ipsum 10", "Lorem Ipsum 11", "Lorem Ipsum 12",
-                          "Lorem Ipsum 13", "Lorem Ipsum 14", "Lorem Ipsum 15", "Lorem Ipsum 16",
-                          "Lorem Ipsum 17", "Lorem Ipsum 18", "Lorem Ipsum 19", "Lorem Ipsum 20"
-                        ].map((caption, i) => (
-                          <div key={i} className="polaroid" style={{ "--r": `${(Math.sin(i) * 5).toFixed(1)}deg` }}>
-                            <div className="polaroid-img">Coming Soon</div>
-                            <div className="polaroid-caption">{caption}</div>
-                          </div>
-                        ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                        <h2 className="text-3d" style={{ fontSize: '2.5rem', margin: 0 }}>{section.title}</h2>
+                        <div className="gallery-nav-btns" style={{ display: 'flex', gap: '1rem' }}>
+                          <button className="nav-btn-round" onClick={() => galleryRef.current.scrollBy({ left: -400, behavior: 'smooth' })}>←</button>
+                          <button className="nav-btn-round" onClick={() => galleryRef.current.scrollBy({ left: 400, behavior: 'smooth' })}>→</button>
+                        </div>
+                      </div>
+                      <div className="gallery-grid" ref={galleryRef} style={{ overflowX: 'auto', display: 'flex', scrollBehavior: 'smooth', padding: '1rem 0' }}>
+                        {Array.from({ length: 42 }, (_, i) => {
+                          const index = i + 1;
+                          const path = index <= 9 ? `/gallery/${index}.JPG` : `/gallery/${index}.jpeg`;
+                          const caption = galleryCaptions[i] || `Starlet Memory #${index}`;
+                          return (
+                            <div 
+                              key={index} 
+                              className="polaroid" 
+                              style={{ 
+                                "--r": `${(Math.sin(index) * 6).toFixed(1)}deg`,
+                                flex: '0 0 auto',
+                                cursor: 'zoom-in'
+                              }}
+                              onClick={() => setSelectedGalleryImage(i)}
+                            >
+                              <div className="polaroid-heart">💖</div>
+                              <div className="polaroid-img" style={{ 
+                                backgroundImage: `url('${path}')`, 
+                                backgroundSize: 'cover', 
+                                backgroundPosition: 'center',
+                                height: '200px',
+                                width: '100%'
+                              }}></div>
+                              <div className="polaroid-caption">{caption}</div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : section.type === 'hall-of-fame' ? (
@@ -2872,6 +2908,38 @@ function App() {
                 Starlet 5.0 Innovation Track
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedGalleryImage !== null && (
+        <div className="modal-overlay lightbox-overlay" onClick={() => setSelectedGalleryImage(null)}>
+          <button className="lightbox-close" onClick={() => setSelectedGalleryImage(null)}>×</button>
+          
+          <div className="lightbox-content" onClick={e => e.stopPropagation()}>
+            <button 
+              className="lightbox-nav-btn prev" 
+              onClick={() => setSelectedGalleryImage(prev => (prev > 0 ? prev - 1 : 41))}
+            >
+              ←
+            </button>
+            
+            <div className="lightbox-image-container">
+              <img 
+                src={selectedGalleryImage + 1 <= 9 ? `/gallery/${selectedGalleryImage + 1}.JPG` : `/gallery/${selectedGalleryImage + 1}.jpeg`} 
+                alt="Enlarged" 
+              />
+              <div className="lightbox-caption">
+                {galleryCaptions[selectedGalleryImage] || `Starlet Memory #${selectedGalleryImage + 1}`}
+              </div>
+            </div>
+
+            <button 
+              className="lightbox-nav-btn next" 
+              onClick={() => setSelectedGalleryImage(prev => (prev < 41 ? prev + 1 : 0))}
+            >
+              →
+            </button>
           </div>
         </div>
       )}
