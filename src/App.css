@@ -748,6 +748,63 @@ header.header-minimal {
     transform: scale(1.1);
 }
 
+@media (max-width: 768px) {
+    .lightbox-content {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 2rem;
+        width: 100vw;
+        height: 100vh;
+    }
+    
+    .lightbox-image-container {
+        max-width: 95vw;
+        width: 100%;
+        order: 1;
+    }
+    
+    .lightbox-image-container img {
+        max-height: 60vh;
+        width: auto;
+        max-width: 100%;
+        border-width: 5px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+    
+    .lightbox-caption {
+        font-size: 1.8rem;
+        margin-top: 1rem;
+        order: 2;
+    }
+    
+    .lightbox-nav-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        z-index: 10002;
+    }
+    
+    .lightbox-nav-btn.prev { 
+        left: 15px; 
+    }
+    
+    .lightbox-nav-btn.next { 
+        right: 15px; 
+    }
+    
+    .lightbox-close {
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+}
+
 .polaroid {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
