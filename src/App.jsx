@@ -158,6 +158,7 @@ function App() {
   const [activeAlert, setActiveAlert] = useState(null);
   const [systemIssues, setSystemIssues] = useState([]);
   const [certsReleased, setCertsReleased] = useState(false);
+  const [venues, setVenues] = useState([]);
 
   const galleryRef = useRef(null);
   const requestRef = useRef();
@@ -234,7 +235,21 @@ function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // 3. Fetch venues
+    fetchVenues();
+
+    // 4. Realtime listener for venues
+    const venueChannel = supabase
+      .channel('venue-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'venues' }, () => {
+        fetchVenues();
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(venueChannel);
+    };
   }, []);
 
   const fetchProfile = async (userId) => {
@@ -269,6 +284,14 @@ function App() {
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
+  };
+
+  const fetchVenues = async () => {
+    const { data, error } = await supabase
+      .from('venues')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (data) setVenues(data);
   };
 
   const [mentorRequests, setMentorRequests] = useState([]);
@@ -431,6 +454,32 @@ function App() {
     } catch (error) {
       alert('Failed to release certificates: ' + error.message);
     }
+  };
+
+  const handleAddVenue = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const updates = {
+      name: formData.get('name'),
+      address: formData.get('address'),
+      google_maps_url: formData.get('mapsUrl'),
+      description: formData.get('description')
+    };
+
+    const { error } = await supabase.from('venues').insert([updates]);
+    if (error) alert(error.message);
+    else {
+      alert('Venue added successfully!');
+      e.target.reset();
+      fetchVenues();
+    }
+  };
+
+  const handleDeleteVenue = async (venueId) => {
+    if (!confirm('Are you sure you want to remove this venue?')) return;
+    const { error } = await supabase.from('venues').delete().eq('id', venueId);
+    if (error) alert(error.message);
+    else fetchVenues();
   };
 
   const handleLeaveTeam = async () => {
@@ -1425,6 +1474,43 @@ function App() {
                 </button>
               </div>
 
+              {/* VENUE MANAGEMENT SECTION */}
+              <div className="admin-panel" style={{ marginBottom: '4rem' }}>
+                <h2 className="text-3d" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Venue Management</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                  <div className="admin-card">
+                    <h3>Add New Venue</h3>
+                    <form className="auth-form" onSubmit={handleAddVenue} style={{ marginTop: '1rem' }}>
+                      <input name="name" type="text" placeholder="Venue Name" required />
+                      <input name="address" type="text" placeholder="Full Address" required />
+                      <input name="mapsUrl" type="url" placeholder="Google Maps URL" required />
+                      <textarea name="description" placeholder="Description / Accessibility Details" required></textarea>
+                      <button type="submit" className="join-btn" style={{ width: '100%' }}>ADD VENUE</button>
+                    </form>
+                  </div>
+                  <div className="admin-card">
+                    <h3>Current Venues</h3>
+                    <div className="admin-issues-list" style={{ marginTop: '1rem' }}>
+                      {venues.length === 0 ? (
+                        <p>No venues added yet.</p>
+                      ) : (
+                        venues.map(v => (
+                          <div key={v.id} className="approval-card" style={{ marginBottom: '1rem' }}>
+                            <div className="user-meta">
+                              <strong>{v.name}</strong>
+                              <p style={{ fontSize: '0.8rem' }}>{v.address}</p>
+                            </div>
+                            <button className="btn-small delete" onClick={() => handleDeleteVenue(v.id)}>
+                              REMOVE
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="admin-teams-section" style={{ marginBottom: '4rem' }}>
                 <h2 className="text-3d" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Active Squads</h2>
                 <div className="teams-grid">
@@ -1924,18 +2010,35 @@ function App() {
           </div>
 
           <div className="venue-grid">
-            <div className="venue-card map-section">
-              <h2 className="text-3d">Location</h2>
-              <div className="map-placeholder">
-                <img src="/icons/location.svg" alt="map" className="map-icon" />
-                <p>Google Maps Embed would go here</p>
-                <div className="venue-address">
-                  <strong>Starlet Innovation Hub</strong><br />
-                  123 Nebula Lane, Tech City, ST 45678
-                </div>
+            {venues.length === 0 ? (
+              <div className="venue-card map-section" style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
+                <h2 className="text-3d">Locations Coming Soon</h2>
+                <p>We are finalizing the coordinates for the Starlet 5.0 hubs. Check back later!</p>
               </div>
-              <div className="join-btn" style={{ marginTop: '1.5rem', textAlign: 'center' }}>OPEN IN GOOGLE MAPS</div>
-            </div>
+            ) : (
+              venues.map(v => (
+                <div key={v.id} className="venue-card map-section">
+                  <h2 className="text-3d">{v.name}</h2>
+                  <div className="map-placeholder">
+                    <img src="/icons/location.svg" alt="map" className="map-icon" />
+                    <p>{v.description}</p>
+                    <div className="venue-address">
+                      <strong>Address:</strong><br />
+                      {v.address}
+                    </div>
+                  </div>
+                  <a 
+                    href={v.google_maps_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="join-btn" 
+                    style={{ marginTop: '1.5rem', textAlign: 'center', display: 'block', textDecoration: 'none' }}
+                  >
+                    OPEN IN GOOGLE MAPS
+                  </a>
+                </div>
+              ))
+            )}
 
             <div className="venue-card gallery-section-venue">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
