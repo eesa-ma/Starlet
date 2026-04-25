@@ -608,6 +608,19 @@ function App() {
     const teamName = formData.get('teamName') || '';
 
     try {
+      if (signupRole === 'attendee') {
+        const { data: isWhitelisted } = await supabase
+          .from('registered_emails')
+          .select('email')
+          .eq('email', email)
+          .single();
+        
+        if (!isWhitelisted) {
+          alert('This email is not registered in our records. Please use the email you registered with on the Google Form.');
+          return;
+        }
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -1641,6 +1654,35 @@ function App() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* EMAIL WHITELIST MANAGEMENT */}
+              <div className="admin-panel" style={{ marginBottom: '4rem' }}>
+                <h2 className="text-3d" style={{ fontSize: '2rem', marginBottom: '2rem' }}>Registration Whitelist</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                  <div className="admin-card">
+                    <h3>Add Registered Email</h3>
+                    <form className="auth-form" style={{ marginTop: '1rem' }} onSubmit={async (e) => {
+                      e.preventDefault();
+                      const email = e.target.email.value;
+                      const { error } = await supabase.from('registered_emails').insert([{ email }]);
+                      if (error) alert(error.message);
+                      else {
+                        alert('Email whitelisted!');
+                        e.target.reset();
+                      }
+                    }}>
+                      <input name="email" type="email" placeholder="attendee@example.com" required />
+                      <button type="submit" className="join-btn" style={{ width: '100%' }}>WHITELIST EMAIL</button>
+                    </form>
+                  </div>
+                  <div className="admin-card">
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      Only emails in this whitelist will be allowed to sign up as <strong>Attendees</strong>. 
+                      This ensures that only people who filled out the Google Form can access the platform.
+                    </p>
+                  </div>
                 </div>
               </div>
 
