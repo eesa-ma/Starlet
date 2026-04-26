@@ -124,11 +124,13 @@ function App() {
     name: '',
     email: '',
     role: 'attendee', // attendee, mentor, admin
+    role_title: '',
     isApproved: false,
     team: null,
     venue: '',
     bio: '',
     stack: [],
+    college: '',
     avatarUrl: '',
     socials: {
       github: '',
@@ -300,7 +302,43 @@ function App() {
         .eq('id', userId)
         .single();
 
-      if (data) {
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create a basic one
+        const { data: newData, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: userId,
+            full_name: session?.user?.user_metadata?.full_name || 'New User',
+            email: session?.user?.email,
+            user_role: 'attendee',
+            is_approved: true
+          }])
+          .select()
+          .single();
+
+        if (newData) {
+          setUser({
+            name: newData.full_name || '',
+            email: newData.email || '',
+            role: newData.user_role || 'attendee',
+            role_title: newData.role_title || '',
+            isApproved: newData.is_approved || false,
+            venue: newData.venue || '',
+            bio: newData.bio || '',
+            stack: Array.isArray(newData.stack) ? newData.stack : [],
+            college: newData.college || '',
+            avatarUrl: newData.avatar_url || '',
+            teamId: newData.team_id || null,
+            teamName: newData.team_name || '',
+            problemStatementId: newData.problem_statement_id || null,
+            socials: {
+              github: newData.github_url || '',
+              linkedin: newData.linkedin_url || '',
+              twitter: newData.twitter_url || ''
+            }
+          });
+        }
+      } else if (data) {
         setUser({
           name: data.full_name || '',
           email: data.email || '',
@@ -309,7 +347,8 @@ function App() {
           isApproved: data.is_approved || false,
           venue: data.venue || '',
           bio: data.bio || '',
-          stack: data.stack || [],
+          stack: Array.isArray(data.stack) ? data.stack : [],
+          college: data.college || '',
           avatarUrl: data.avatar_url || '',
           teamId: data.team_id || null,
           teamName: data.team_name || '',
@@ -927,7 +966,7 @@ function App() {
               user_role: signupRole,
               role_title: roleTitle,
               bio: bio,
-              tech_stack: techStack,
+              stack: techStack ? techStack.split(',').map(s => s.trim()) : [],
               college: college,
               avatar_url: avatarUrl,
               team_id: finalTeamId,
@@ -938,6 +977,15 @@ function App() {
             }
           ]);
         if (profileError) throw profileError;
+
+        // Log the signup action for admin awareness
+        if (signupRole === 'mentor') {
+          await supabase.from('audit_logs').insert([{
+            admin_id: authData.user.id, // Using the new user's ID as a placeholder for non-admin action
+            action: 'New Mentor Signup',
+            details: { name: fullName, email: email }
+          }]);
+        }
       }
 
       alert('Registration successful! Please check your email for verification.');
@@ -1058,6 +1106,25 @@ function App() {
     }
   };
 
+  const handleDeleteUser = async (userId, name) => {
+    if (!confirm(`Are you sure you want to remove ${name} from the galaxy? This action is irreversible.`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      alert(`${name} has been successfully removed.`);
+      fetchAllUsers(); // Refresh the list
+      logAction('Deleted User', { name, userId });
+    } catch (error) {
+      alert('Failed to remove user: ' + error.message);
+    }
+  };
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Error logging out:', error.message);
@@ -1107,6 +1174,7 @@ function App() {
         bio: user.bio,
         venue: user.venue,
         stack: user.stack,
+        college: user.college,
         github_url: user.socials.github,
         linkedin_url: user.socials.linkedin,
         twitter_url: user.socials.twitter,
@@ -2188,7 +2256,7 @@ function App() {
                 <div className="admin-panel mentor-queue">
                   <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Mentor Approval Queue</h2>
                   <div className="approval-list">
-                    {allMentors.filter(m => !m.is_approved).map(mentor => (
+                    {allUsers.filter(u => u.user_role === 'mentor' && !u.is_approved).map(mentor => (
                       <div key={mentor.id} className="approval-card">
                         <div className="user-meta">
                           <strong>{mentor.full_name}</strong>
@@ -2198,7 +2266,7 @@ function App() {
                         <button className="join-btn btn-approve" onClick={() => handleApproveMentor(mentor.id)}>APPROVE MENTOR</button>
                       </div>
                     ))}
-                    {allMentors.filter(m => !m.is_approved).length === 0 && (
+                    {allUsers.filter(u => u.user_role === 'mentor' && !u.is_approved).length === 0 && (
                       <div className="empty-state">
                         <p>All clear! No pending mentors.</p>
                       </div>
@@ -2266,7 +2334,13 @@ function App() {
                             <td>
                               <div className="table-actions">
                                 <button className="btn-table-action" title="View details">DETAILS</button>
-                                <button className="btn-table-action delete" title="Delete user">REMOVE</button>
+                                <button 
+                                  className="btn-table-action delete" 
+                                  title="Delete user"
+                                  onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                >
+                                  REMOVE
+                                </button>
                               </div>
                             </td>
                           </tr>
