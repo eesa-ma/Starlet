@@ -236,6 +236,9 @@ function App() {
       if (session) {
         setIsLoggedIn(true);
         fetchProfile(session.user.id);
+        if (window.location.hash && window.location.hash.includes('type=recovery')) {
+          setActiveView('reset-password');
+        }
       }
       setLoading(false);
     });
@@ -247,8 +250,8 @@ function App() {
         setIsLoggedIn(true);
         fetchProfile(session.user.id);
 
-        // If the event is PASSWORD_RECOVERY, switch to reset view
-        if (event === 'PASSWORD_RECOVERY') {
+        // If the event is PASSWORD_RECOVERY or hash contains type=recovery, switch to reset view
+        if (event === 'PASSWORD_RECOVERY' || (window.location.hash && window.location.hash.includes('type=recovery'))) {
           setActiveView('reset-password');
         }
       } else {
@@ -595,12 +598,25 @@ function App() {
 
       // 3. Group into 4s
       const groupSize = 4;
+      const createdTeams = [];
 
       for (let i = 0; i < shuffled.length; i += groupSize) {
         const group = shuffled.slice(i, i + groupSize);
-        if (group.length < 2) {
-          // Add leftover to previous group logic would go here, 
-          // for now we'll just form teams of 2-4
+
+        if (group.length === 1 && createdTeams.length > 0) {
+          // Merge leftover single user into the last created team
+          const lastTeam = createdTeams[createdTeams.length - 1];
+          const singleUser = group[0];
+          await supabase
+            .from('profiles')
+            .update({
+              team_id: lastTeam.id,
+              team_name: lastTeam.name,
+              team_status: 'team',
+              needs_teaming: false
+            })
+            .eq('id', singleUser.id);
+          continue;
         }
 
         const squadNumber = Math.floor(Math.random() * 10000);
@@ -614,6 +630,7 @@ function App() {
           .single();
 
         if (teamError) continue;
+        createdTeams.push({ id: newTeam.id, name: teamName });
 
         // Update all members in this group
         for (const user of group) {
@@ -710,10 +727,71 @@ function App() {
     }
   };
 
+  const promoteWaitlistedUsers = async () => {
+    try {
+      const { data: currentVenues } = await supabase.from('venues').select('*');
+      const { data: attendees } = await supabase.from('profiles').select('*').eq('user_role', 'attendee');
+      if (!currentVenues || !attendees) return;
+
+      const venueOccupancy = {};
+      currentVenues.forEach(v => {
+        venueOccupancy[v.name] = {
+          capacity: parseInt(v.capacity) || 0,
+          currentCount: attendees.filter(a => a.venue === v.name).length
+        };
+      });
+
+      const waitlisted = attendees.filter(a => a.venue === 'Waitlisted/Overflow');
+      if (waitlisted.length === 0) return;
+
+      const waitlistTeams = {};
+      waitlisted.forEach(a => {
+        const tid = a.team_id || `solo-${a.id}`;
+        if (!waitlistTeams[tid]) waitlistTeams[tid] = [];
+        waitlistTeams[tid].push(a);
+      });
+
+      let promotionsCount = 0;
+
+      for (const tid in waitlistTeams) {
+        const members = waitlistTeams[tid];
+        const size = members.length;
+        const pref = members[0].preferred_venue || currentVenues[0]?.name;
+
+        let targetVenue = null;
+        if (venueOccupancy[pref] && (venueOccupancy[pref].currentCount + size) <= venueOccupancy[pref].capacity) {
+          targetVenue = pref;
+        } else {
+          targetVenue = Object.keys(venueOccupancy).find(vName => 
+            (venueOccupancy[vName].currentCount + size) <= venueOccupancy[vName].capacity
+          );
+        }
+
+        if (targetVenue) {
+          venueOccupancy[targetVenue].currentCount += size;
+          promotionsCount += size;
+          for (const m of members) {
+            await supabase.from('profiles').update({ venue: targetVenue }).eq('id', m.id);
+          }
+        }
+      }
+
+      if (promotionsCount > 0) {
+        console.log(`Successfully promoted ${promotionsCount} waitlisted users to open venue spots.`);
+        fetchAllUsers();
+      }
+    } catch (error) {
+      console.error('Error promoting waitlisted users:', error);
+    }
+  };
+
   const handleManualVenueChange = async (userId, newVenue) => {
     const { error } = await supabase.from('profiles').update({ venue: newVenue }).eq('id', userId);
     if (error) alert(error.message);
-    else fetchAllUsers();
+    else {
+      fetchAllUsers();
+      await promoteWaitlistedUsers();
+    }
   };
 
   const handleTeamVenueChange = async (teamName, newVenue) => {
@@ -723,6 +801,7 @@ function App() {
     }
     alert(`Team ${teamName} relocated to ${newVenue}`);
     fetchAllUsers();
+    await promoteWaitlistedUsers();
   };
 
   const handleAddVenue = async (e) => {
@@ -869,6 +948,7 @@ function App() {
       if (error) throw error;
       alert('You have left the team and are now back in the solo pool.');
       fetchProfile(session.user.id);
+      await promoteWaitlistedUsers();
     } catch (error) {
       alert(error.message);
     }
@@ -1029,6 +1109,7 @@ function App() {
     if (error) alert(error.message);
     else {
       alert('Password updated successfully!');
+      window.history.replaceState(null, document.title, window.location.pathname);
       setActiveView('login');
     }
   };
@@ -1115,6 +1196,7 @@ function App() {
       alert(`${name} has been successfully removed.`);
       fetchAllUsers(); // Refresh the list
       logAction('Deleted User', { name, userId });
+      await promoteWaitlistedUsers();
     } catch (error) {
       alert('Failed to remove user: ' + error.message);
     }
@@ -2663,8 +2745,32 @@ function App() {
                 <div className="profile-field">
                   <label>My Tech Stack</label>
                   <div className="tech-tag-container">
-                    {user.stack.map(s => <span key={s} className="tech-tag">{s}</span>)}
-                    <span className="tech-tag" style={{ opacity: 0.5, cursor: 'pointer' }}>+ Add Tool</span>
+                    {user.stack.map(s => (
+                      <span 
+                        key={s} 
+                        className="tech-tag" 
+                        title="Click to remove"
+                        onClick={() => {
+                          if (confirm(`Remove ${s} from your stack?`)) {
+                            setUser(prev => ({ ...prev, stack: prev.stack.filter(skill => skill !== s) }));
+                          }
+                        }}
+                      >
+                        {s} ×
+                      </span>
+                    ))}
+                    <span 
+                      className="tech-tag" 
+                      style={{ opacity: 0.5, cursor: 'pointer' }}
+                      onClick={() => {
+                        const newSkill = prompt("Enter new tool or technology (e.g. React, Figma, Python):");
+                        if (newSkill && newSkill.trim()) {
+                          setUser(prev => ({ ...prev, stack: [...prev.stack, newSkill.trim()] }));
+                        }
+                      }}
+                    >
+                      + Add Tool
+                    </span>
                   </div>
                 </div>
                 <div className="profile-field">
