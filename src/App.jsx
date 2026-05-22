@@ -55,7 +55,7 @@ const sectionsData = [
   { id: 10, type: 'sponsors', title: "Our Supporters", content: "The organizations making this impact possible.", image: "/brand/Logo.png" },
   { id: 11, type: 'gallery', title: "The Gallery", content: "Captured moments of innovation and fun.", image: "/brand/Logo.png" },
   { id: 12, type: 'faq', title: "Common Doubts", content: "Answers to frequently asked questions.", image: "/icons/warning.svg" },
-  { id: 13, type: 'newsletter', title: "Stay Updated", content: "Join our community to never miss an update.", image: "/icons/rocket.svg" },
+  // { id: 13, type: 'newsletter', title: "Stay Updated", content: "Join our community to never miss an update.", image: "/icons/rocket.svg" },
   { id: 14, type: 'contact', title: "Get in Touch", content: "Reach out for support or inquiries.", image: "/icons/location.svg" }
 ];
 
@@ -156,6 +156,24 @@ function App() {
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + 0.1);
     } catch (e) { }
+  };
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    try {
+      const form = e.target;
+      const fd = new FormData(form);
+      const name = (fd.get('contactName') || user.name || '').toString().trim();
+      const email = (fd.get('contactEmail') || user.email || '').toString().trim();
+      const desc = (fd.get('contactDesc') || '').toString().trim();
+      const subject = `Enquiry regarding Starlet from ${name || email || 'a participant'}`;
+      const body = `${desc}\n\nFrom: ${name}${email ? ` <${email}>` : ''}`;
+      const recipient = 'hello@mindempowered.com';
+      const mailto = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailto;
+    } catch (err) {
+      console.error('Contact submit failed', err);
+    }
   };
 
 
@@ -1825,12 +1843,12 @@ function App() {
                     <div className="section-content">
                       <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
                       <div className="contact-container">
-                        <div className="contact-form">
-                          <input type="text" placeholder="Your Name" />
-                          <input type="email" placeholder="Your Email" />
-                          <textarea placeholder="How can we help?"></textarea>
-                          <button className="join-btn" style={{ width: 'fit-content' }}>SEND MESSAGE</button>
-                        </div>
+                        <form className="contact-form" onSubmit={handleContactSubmit}>
+                          <input type="text" name="contactName" placeholder="Your Name" />
+                          <input type="email" name="contactEmail" placeholder="Your Email" />
+                          <textarea name="contactDesc" placeholder="How can we help?"></textarea>
+                          <button type="submit" className="join-btn" style={{ width: 'fit-content' }}>SEND MESSAGE</button>
+                        </form>
 
                         <div className="contact-socials">
                           <h3 className="handwritten social-title">Follow our journey!</h3>
