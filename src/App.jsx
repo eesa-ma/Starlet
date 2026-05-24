@@ -195,6 +195,7 @@ function App() {
   const [venues, setVenues] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [problemStatements, setProblemStatements] = useState([]);
+  const [visibleProblemStatementsCount, setVisibleProblemStatementsCount] = useState(5);
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [selectedMentor, setSelectedMentor] = useState(null);
   const [mentorRequestModal, setMentorRequestModal] = useState(null);
@@ -2455,16 +2456,39 @@ function App() {
                       {problemStatements.length === 0 ? (
                         <p>Library is empty.</p>
                       ) : (
-                        problemStatements.map(ps => (
-                          <div key={ps.id} className="approval-card" style={{ marginBottom: '1rem' }}>
-                            <div className="user-meta">
-                              <strong>{ps.title}</strong>
-                              <small style={{ display: 'block', color: 'var(--blue-shadow)' }}>{ps.track_category}</small>
-                              <p style={{ fontSize: '0.8rem', marginTop: '0.3rem' }}>{ps.description}</p>
+                        <>
+                          {problemStatements.slice(0, visibleProblemStatementsCount).map(ps => (
+                            <div key={ps.id} className="approval-card" style={{ marginBottom: '1rem' }}>
+                              <div className="user-meta">
+                                <strong>{ps.title}</strong>
+                                <small style={{ display: 'block', color: 'var(--blue-shadow)' }}>{ps.track_category}</small>
+                                <p style={{ fontSize: '0.8rem', marginTop: '0.3rem' }}>{ps.description}</p>
+                              </div>
+                              <button className="btn-small delete" onClick={() => handleDeleteProblemStatement(ps.id)}>REMOVE</button>
                             </div>
-                            <button className="btn-small delete" onClick={() => handleDeleteProblemStatement(ps.id)}>REMOVE</button>
+                          ))}
+                          
+                          <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+                            {problemStatements.length > visibleProblemStatementsCount && (
+                              <button 
+                                className="btn-small" 
+                                style={{ background: 'var(--yellow-star)', color: 'var(--text-navy)', fontFamily: "'Fredoka One', cursive" }} 
+                                onClick={() => setVisibleProblemStatementsCount(prev => prev + 5)}
+                              >
+                                SHOW MORE
+                              </button>
+                            )}
+                            {visibleProblemStatementsCount > 5 && (
+                              <button 
+                                className="btn-small" 
+                                style={{ background: '#eee', color: 'var(--text-navy)', fontFamily: "'Fredoka One', cursive" }} 
+                                onClick={() => setVisibleProblemStatementsCount(5)}
+                              >
+                                SHOW LESS
+                              </button>
+                            )}
                           </div>
-                        ))
+                        </>
                       )}
                     </div>
                   </div>
