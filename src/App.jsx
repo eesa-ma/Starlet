@@ -2705,7 +2705,7 @@ function App() {
                                   {sub ? 'SUBMITTED' : 'PENDING'}
                                 </span>
                               </td>
-                              <td>{sub ? new Date(sub.submitted_at).toLocaleDateString() : '-'}</td>
+                              <td>{sub ? new Date(sub.submitted_at).toLocaleString() : '-'}</td>
                             </tr>
                           );
                         })}
