@@ -3295,11 +3295,19 @@ function App() {
                         </div>
                       </div>
                       <div className="venue-image-grid">
-                        {v.image_urls.replace(/\[|\]/g,'').replace(/"/g, '').split(',').map((img, idx) => (
-                          <div key={idx} className="venue-img-placeholder">
-                            <img src={img} alt={`venue-${idx}`} />
-                          </div>
-                        ))}
+                        {(() => {
+                          const imgs = v.image_urls.replace(/\[|\]/g,'').replace(/"/g, '').split(',');
+                          const gateImgIndex = imgs.findIndex(img => img.includes('0.7359368490637637'));
+                          if (gateImgIndex > 0) {
+                            const [gateImg] = imgs.splice(gateImgIndex, 1);
+                            imgs.unshift(gateImg);
+                          }
+                          return imgs.map((img, idx) => (
+                            <div key={idx} className="venue-img-placeholder">
+                              <img src={img} alt={`venue-${idx}`} />
+                            </div>
+                          ));
+                        })()}
                       </div>
                     </div>
                     {isAdiShankara && (
