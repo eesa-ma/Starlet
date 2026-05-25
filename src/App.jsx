@@ -490,7 +490,7 @@ function App() {
   };
 
   const fetchAllMentors = async () => {
-    const { data } = await supabase.from('mentors').select('*').eq('is_active', true);
+    const { data } = await supabase.from('mentors').select('').eq('is_active', true);
     if (data) setMentors(data);
   };
 
@@ -1363,7 +1363,7 @@ function App() {
           company: user.venue || 'Starlet Command',
           bio: user.bio,
           expertise: user.stack,
-          avatar_url: user.avatarUrl || 'icons/user-profile.svg'
+          avatar_url: user.avatarUrl || ''
         }).eq('profile_id', session.user.id);
         fetchAllMentors();
       }
