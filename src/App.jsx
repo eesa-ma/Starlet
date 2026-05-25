@@ -458,6 +458,7 @@ function App() {
       fetchAllUsers();
       fetchAuditLogs();
       fetchSubmissions();
+      fetchMentorRequests();
     }
   }, [isLoggedIn, user.role]);
 
@@ -468,12 +469,18 @@ function App() {
   }, [isLoggedIn, user.role, adminActiveTab]);
 
   const fetchMentorRequests = async () => {
-    const { data, error } = await supabase
+    if (!session?.user?.id) return;
+    let query = supabase
       .from('mentor_requests')
       .select('*, profiles:attendee_id(full_name, email)')
-      .eq('mentor_id', session.user.id)
       .or('status.is.null,status.eq.pending')
       .order('created_at', { ascending: false });
+
+    if (user.role !== 'admin') {
+      query = query.eq('mentor_id', session.user.id);
+    }
+
+    const { data, error } = await query;
     if (data) setMentorRequests(data);
   };
 
@@ -2214,14 +2221,14 @@ function App() {
                 <div className="admin-stat-card">
                   <div className="stat-icon"><img src="icons/trophy.svg" alt="verified" /></div>
                   <div className="stat-info">
-                    <strong>{allMentors.filter(m => m.is_approved).length}</strong>
+                    <strong>{allUsers.filter(u => u.user_role === 'mentor' && u.is_approved).length}</strong>
                     <span>Verified Mentors</span>
                   </div>
                 </div>
                 <div className="admin-stat-card warning">
                   <div className="stat-icon"><img src="icons/calendar.svg" alt="pending" /></div>
                   <div className="stat-info">
-                    <strong>{allMentors.filter(m => !m.is_approved).length}</strong>
+                    <strong>{allUsers.filter(u => u.user_role === 'mentor' && !u.is_approved).length}</strong>
                     <span>Pending Approval</span>
                   </div>
                 </div>
