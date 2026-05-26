@@ -168,7 +168,7 @@ const SponsorsPage = ({ onBack }) => {
                 <video 
                   src={video.src} 
                   controls 
-                  preload="metadata"
+                  preload="none"
                   className="sponsors-testimonial-video"
                 />
               </div>

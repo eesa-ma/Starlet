@@ -426,13 +426,15 @@ function App() {
   const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
+    const channels = [];
+
     if (isLoggedIn && (user.role === 'mentor' || (user.role === 'admin' && adminActiveTab === 'mentor'))) {
       fetchMentorRequests();
       // Realtime listener for new requests
       const channel = supabase
         .channel('schema-db-changes')
         .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'mentor_requests', filter: `mentor_id=eq.${session.user.id}` },
+          { event: 'INSERT', schema: 'public', table: 'mentor_requests', filter: `mentor_id=eq.${session?.user?.id}` },
           async (payload) => {
             // Fetch rich details for the alert
             const { data: richData } = await supabase
@@ -451,7 +453,7 @@ function App() {
           }
         )
         .subscribe();
-      return () => supabase.removeChannel(channel);
+      channels.push(channel);
     }
 
     if (isLoggedIn && user.role === 'admin') {
@@ -460,8 +462,19 @@ function App() {
       fetchAuditLogs();
       fetchSubmissions();
       fetchMentorRequests();
+
+      const adminChannel = supabase.channel('admin-updates')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+          fetchAllUsers();
+        })
+        .subscribe();
+      channels.push(adminChannel);
     }
-  }, [isLoggedIn, user.role]);
+
+    return () => {
+      channels.forEach(ch => supabase.removeChannel(ch));
+    };
+  }, [isLoggedIn, user.role, adminActiveTab, session?.user?.id]);
 
   useEffect(() => {
     if (isLoggedIn && user.role === 'admin') {
@@ -1997,21 +2010,36 @@ function App() {
                     </div>
                   ) : section.type === 'mentors' ? (
                     <div className="section-content">
-                      <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
-                      <div className="mentor-carousel-wrapper">
+                      <div className="mentors-section-header">
+                        <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
                         {mentors.length > 0 && (
-                          <button 
-                            className="mentor-nav-button prev" 
-                            onClick={() => {
-                              if (mentorGridRef.current) {
-                                mentorGridRef.current.scrollBy({ left: -368, behavior: 'smooth' });
-                              }
-                            }}
-                            aria-label="Previous mentors"
-                          >
-                            ←
-                          </button>
+                          <div className="mentor-header-nav">
+                            <button 
+                              className="mentor-nav-button prev" 
+                              onClick={() => {
+                                if (mentorGridRef.current) {
+                                  mentorGridRef.current.scrollBy({ left: -368, behavior: 'smooth' });
+                                }
+                              }}
+                              aria-label="Previous mentors"
+                            >
+                              ←
+                            </button>
+                            <button 
+                              className="mentor-nav-button next" 
+                              onClick={() => {
+                                if (mentorGridRef.current) {
+                                  mentorGridRef.current.scrollBy({ left: 368, behavior: 'smooth' });
+                                }
+                              }}
+                              aria-label="Next mentors"
+                            >
+                              →
+                            </button>
+                          </div>
                         )}
+                      </div>
+                      <div className="mentor-carousel-wrapper">
                         <div className="mentor-grid" ref={mentorGridRef}>
                           {mentors.length === 0 ? (
                             <p style={{ color: '#fff', textAlign: 'center', gridColumn: '1 / -1' }}>Mentors are being onboarded. Check back soon!</p>
@@ -2028,19 +2056,6 @@ function App() {
                             ))
                           )}
                         </div>
-                        {mentors.length > 0 && (
-                          <button 
-                            className="mentor-nav-button next" 
-                            onClick={() => {
-                              if (mentorGridRef.current) {
-                                mentorGridRef.current.scrollBy({ left: 368, behavior: 'smooth' });
-                              }
-                            }}
-                            aria-label="Next mentors"
-                          >
-                            →
-                          </button>
-                        )}
                       </div>
                     </div>
 
