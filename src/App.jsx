@@ -109,10 +109,13 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeView, setActiveView] = useState('landing'); // landing, login, signup, profile
   const [adminActiveTab, setAdminActiveTab] = useState('admin'); // admin or mentor
+  const [expandedUserId, setExpandedUserId] = useState(null);
+  const [visibleUserCount, setVisibleUserCount] = useState(5);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [faqLimit, setFaqLimit] = useState(3);
   const [visibleSections, setVisibleSections] = useState(new Set());
 
@@ -128,14 +131,23 @@ function App() {
     stack: [],
     college: '',
     avatarUrl: '',
+    website: '',
+    yearsOfExperience: '',
+    languages: [],
     socials: {
       github: '',
       linkedin: '',
       twitter: ''
     }
   });
+  const originalUser = useRef(null); // snapshot of last-saved profile for dirty-checking
+  const hasProfileChanged = originalUser.current
+    ? JSON.stringify(user) !== JSON.stringify(originalUser.current)
+    : false;
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [showAboutPopup, setShowAboutPopup] = useState(false);
+  const [showAikyamPopup, setShowAikyamPopup] = useState(false);
+  const [showAdiPopup, setShowAdiPopup] = useState(false);
   const [showRegPopup, setShowRegPopup] = useState(false);
 
   const playClickSound = () => {
@@ -195,6 +207,7 @@ function App() {
   const [venues, setVenues] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [problemStatements, setProblemStatements] = useState([]);
+  const [visibleLandingTracksCount, setVisibleLandingTracksCount] = useState(3);
   const [visibleProblemStatementsCount, setVisibleProblemStatementsCount] = useState(5);
   const [visibleActiveMentorsCount, setVisibleActiveMentorsCount] = useState(5);
   const [visiblePendingMentorsCount, setVisiblePendingMentorsCount] = useState(5);
@@ -259,9 +272,56 @@ function App() {
     };
     window.addEventListener('scroll', handleScroll);
 
-    // Splash Screen Timer
-    const fadeTimer = setTimeout(() => setFadeOut(true), 3000);
-    const removeTimer = setTimeout(() => setShowSplash(false), 3800);
+    // Splash Screen Dynamic Loader
+    const assets = [
+      'brand/Logo.png',
+      'brand/Mind Empowered.gif',
+      'brand/Starlet.mp4',
+      'icons/user-profile.svg'
+    ];
+    let loaded = 0;
+    
+    // Make sure we wait at least 2 seconds so the splash screen doesn't just flash instantly
+    const minTimePromise = new Promise(resolve => setTimeout(resolve, 2000));
+    let isComplete = false;
+
+    const checkComplete = () => {
+      if (loaded >= assets.length && !isComplete) {
+        isComplete = true;
+        minTimePromise.then(() => {
+          setLoadingProgress(100);
+          setTimeout(() => setFadeOut(true), 500);
+          setTimeout(() => setShowSplash(false), 1200);
+        });
+      }
+    };
+
+    assets.forEach(src => {
+      const isVideo = src.endsWith('.mp4');
+      const element = isVideo ? document.createElement('video') : new Image();
+      
+      const onload = () => {
+        loaded++;
+        setLoadingProgress(prev => Math.max(prev, Math.min(90, (loaded / assets.length) * 100)));
+        checkComplete();
+      };
+      
+      if (isVideo) {
+        element.onloadeddata = onload;
+        element.onerror = onload; // continue even if error
+        element.src = src;
+      } else {
+        element.onload = onload;
+        element.onerror = onload;
+        element.src = src;
+      }
+    });
+
+    // Fallback timer just in case assets fail to load or take too long
+    const fallbackTimer = setTimeout(() => {
+      loaded = assets.length;
+      checkComplete();
+    }, 6000);
 
     const handleGlobalClick = (e) => {
       const target = e.target.closest('button, a, .join-btn, .login-btn, .nav-link, .logo-circle, .mentor-card, .faq-item');
@@ -275,8 +335,7 @@ function App() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('click', handleGlobalClick);
-      clearTimeout(fadeTimer);
-      clearTimeout(removeTimer);
+      clearTimeout(fallbackTimer);
     };
   }, [isSoundEnabled]);
 
@@ -307,7 +366,7 @@ function App() {
         }
       } else {
         setIsLoggedIn(false);
-        setUser({ name: '', email: '', role: '', team: null, venue: '', bio: '', stack: [], socials: { github: '', linkedin: '', twitter: '' } });
+        setUser({ name: '', email: '', role: '', team: null, venue: '', bio: '', stack: [], website: '', yearsOfExperience: '', languages: [], socials: { github: '', linkedin: '', twitter: '' } });
       }
     });
 
@@ -398,6 +457,9 @@ function App() {
           stack: [],
           college: '',
           avatarUrl: '',
+          website: '',
+          yearsOfExperience: '',
+          languages: [],
           teamId: null,
           teamName: '',
           problemStatementId: null,
@@ -419,6 +481,9 @@ function App() {
           stack: Array.isArray(data.stack) ? data.stack : [],
           college: data.college || '',
           avatarUrl: data.avatar_url || '',
+          website: data.website_url || '',
+          yearsOfExperience: data.years_of_experience || '',
+          languages: Array.isArray(data.languages) ? data.languages : [],
           teamId: data.team_id || null,
           teamName: data.team_name || '',
           problemStatementId: data.problem_statement_id || null,
@@ -428,6 +493,30 @@ function App() {
             twitter: data.twitter_url || ''
           }
         });
+        // Snapshot for dirty-checking (must mirror the shape above)
+        originalUser.current = {
+          name: data.full_name || '',
+          email: data.email || '',
+          role: data.user_role || 'attendee',
+          role_title: data.role_title || '',
+          isApproved: data.is_approved || false,
+          venue: data.venue || '',
+          bio: data.bio || '',
+          stack: Array.isArray(data.stack) ? [...data.stack] : [],
+          college: data.college || '',
+          avatarUrl: data.avatar_url || '',
+          website: data.website_url || '',
+          yearsOfExperience: data.years_of_experience || '',
+          languages: Array.isArray(data.languages) ? [...data.languages] : [],
+          teamId: data.team_id || null,
+          teamName: data.team_name || '',
+          problemStatementId: data.problem_statement_id || null,
+          socials: {
+            github: data.github_url || '',
+            linkedin: data.linkedin_url || '',
+            twitter: data.twitter_url || ''
+          }
+        };
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -1344,12 +1433,22 @@ function App() {
     const input = document.getElementById('certificate-render');
     if (!input) return;
 
+    // Temporarily remove CSS transform so html2canvas captures at true A4 size
+    const prevTransform = input.style.transform;
+    const prevMarginBottom = input.style.marginBottom;
+    input.style.transform = 'none';
+    input.style.marginBottom = '0';
+
     try {
       const canvas = await html2canvas(input, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#fffdf5'
       });
+
+      // Restore transform after capture
+      input.style.transform = prevTransform;
+      input.style.marginBottom = prevMarginBottom;
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -1365,10 +1464,14 @@ function App() {
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Starlet5_Certificate_${user.name?.replace(/\s+/g, '_') || 'Participant'}.pdf`);
     } catch (error) {
+      // Restore transform even on error
+      input.style.transform = prevTransform;
+      input.style.marginBottom = prevMarginBottom;
       console.error('Error generating PDF:', error);
       alert('Failed to generate certificate. Please try again.');
     }
   };
+
 
   const updateProfile = async () => {
     if (!session?.user?.id) return alert('Not logged in.');
@@ -1384,6 +1487,10 @@ function App() {
         stack: user.stack,
         github_url: user.socials.github,
         linkedin_url: user.socials.linkedin,
+        twitter_url: user.socials.twitter,
+        website_url: user.website,
+        years_of_experience: user.yearsOfExperience,
+        languages: user.languages,
         updated_at: new Date().toISOString()
       };
 
@@ -1398,12 +1505,16 @@ function App() {
           company: user.venue || 'Starlet Command',
           bio: user.bio,
           expertise: user.stack,
-          avatar_url: user.avatarUrl || ''
+          avatar_url: user.avatarUrl || 'icons/user-profile.svg',
+          website_url: user.website,
+          years_of_experience: user.yearsOfExperience,
+          languages: user.languages
         }).eq('profile_id', session.user.id);
         fetchAllMentors();
       }
 
       alert('Profile updated successfully!');
+      originalUser.current = { ...user, socials: { ...user.socials } }; // reset dirty state
     } catch (error) {
       alert(error.message);
     }
@@ -1531,7 +1642,7 @@ function App() {
           </div>
           <div className="splash-text">INITIALIZING QUANTUM LINK...</div>
           <div className="splash-loading-container">
-            <div className="splash-loading-bar" style={{ animationDuration: '1s' }}></div>
+            <div className="splash-loading-bar" style={{ width: `${loadingProgress}%`, transition: 'width 0.3s ease-out', animation: 'none' }}></div>
           </div>
         </div>
       </div>
@@ -1540,29 +1651,7 @@ function App() {
 
   return (
     <div className="App">
-      {/* Mentor Detail Modal */}
-      {selectedMentor && (
-        <div className="modal-overlay" onClick={() => setSelectedMentor(null)}>
-          <div className="mentor-modal" onClick={e => e.stopPropagation()}>
-            <div className="close-modal" onClick={() => setSelectedMentor(null)}>
-              <img src="icons/close.svg" alt="close" />
-            </div>
-            <div className="mentor-modal-content">
-              <div className="mentor-modal-photo">
-                <img src={selectedMentor.image} alt="mentor" />
-              </div>
-              <div className="mentor-modal-info">
-                <h2 className="text-3d">{selectedMentor.name}</h2>
-                <div className="mentor-modal-tag">{selectedMentor.role} @ {selectedMentor.company}</div>
-                <p>{selectedMentor.bio}</p>
-                <div className="mentor-modal-footer">
-                  <div className="join-btn" onClick={() => setSelectedMentor(null)}>GET IN TOUCH</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Registration Popup */}
       {showRegPopup && (
@@ -1606,7 +1695,7 @@ function App() {
             </div>
             <h1 className="text-3d splash-title">STARLET 5.0</h1>
             <div className="splash-loading-container">
-              <div className="splash-loading-bar"></div>
+              <div className="splash-loading-bar" style={{ width: `${loadingProgress}%`, transition: 'width 0.3s ease-out', animation: 'none' }}></div>
             </div>
             <p className="handwritten splash-text">Igniting your creativity...</p>
           </div>
@@ -1622,9 +1711,16 @@ function App() {
       <div className="sparkle s2">✧</div>
       <div className="sparkle s3">✦</div>
 
-      <header className={activeView !== 'landing' && activeView !== 'sponsors-overview' ? 'header-minimal' : ''}>
-        <div className="logo-circle" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
-          <img src="brand/Logo.png" alt="Starlet Logo" />
+      <header className={activeView !== 'landing' && activeView !== 'sponsors-overview' && activeView !== 'profile' ? 'header-minimal' : ''}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <div className="logo-circle" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
+            <img src="brand/Logo.png" alt="Starlet Logo" />
+          </div>
+          {(activeView === 'profile' || activeView === 'sponsors-overview') && (
+            <span className="logo-text-starlet" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
+              Starlet
+            </span>
+          )}
         </div>
 
         {activeView === 'landing' && (
@@ -1712,6 +1808,58 @@ function App() {
               </div>
               <div className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
                 <img src={isMenuOpen ? "icons/close.svg" : "icons/hamburger.svg"} alt="menu" />
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeView === 'profile' && (
+          <>
+            <nav className={`nav-links profile-nav-links ${isMenuOpen ? 'mobile-active' : ''}`}>
+              {/* Profile nav is empty except on mobile where we might want something, or just leave it empty if we use header-actions */}
+            </nav>
+
+            <div className="header-actions">
+              <div className="profile-header-icons">
+                {user.role === 'admin' && (
+                  <div
+                    className="nav-btn-round profile-switch-btn"
+                    onClick={() => setAdminActiveTab(adminActiveTab === 'admin' ? 'mentor' : 'admin')}
+                    title={adminActiveTab === 'admin' ? 'Switch to Mentor View' : 'Switch to Admin View'}
+                    style={{ borderColor: 'var(--yellow-primary)', color: 'var(--yellow-primary)' }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3L3 8l5 5"></path>
+                      <path d="M3 8h18"></path>
+                      <path d="M16 21l5-5-5-5"></path>
+                      <path d="M21 16H3"></path>
+                    </svg>
+                  </div>
+                )}
+
+                <div
+                  className="nav-btn-round"
+                  onClick={() => setActiveView('landing')}
+                  title="Back to Home"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                </div>
+
+                <div
+                  className="nav-btn-round"
+                  onClick={(e) => { e.preventDefault(); handleLogout(); setIsMenuOpen(false); }}
+                  title="Logout"
+                  style={{ borderColor: 'var(--pink-primary)', color: 'var(--pink-primary)' }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                </div>
               </div>
             </div>
           </>
@@ -1833,7 +1981,7 @@ function App() {
                             <p>Innovation tracks are currently being finalized. Stay tuned!</p>
                           </div>
                         ) : (
-                          problemStatements.map((track, i) => (
+                          problemStatements.slice(0, visibleLandingTracksCount).map((track, i) => (
                             <div key={track.id} className="track-card-mini" onClick={() => setSelectedTrack({ ...track, index: i + 1 })}>
                               <div className="track-card-inner">
                                 <span className="track-number">#{i + 1}</span>
@@ -1844,6 +1992,27 @@ function App() {
                           ))
                         )}
                       </div>
+
+                      {problemStatements.length > 3 && (
+                        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          {visibleLandingTracksCount < problemStatements.length && (
+                            <button 
+                              className="join-btn" 
+                              onClick={() => setVisibleLandingTracksCount(prev => prev + 3)}
+                            >
+                              SHOW MORE
+                            </button>
+                          )}
+                          {visibleLandingTracksCount > 3 && (
+                            <button 
+                              className="btn-secondary" 
+                              onClick={() => setVisibleLandingTracksCount(prev => Math.max(prev - 3, 3))}
+                            >
+                              SHOW LESS
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : section.type === 'sponsors' ? (
                     <div className="section-content">
@@ -1864,7 +2033,7 @@ function App() {
                           </div>
                         </div>
 
-                        <div className="partner-card-wide">
+                        <div className="partner-card-wide clickable" onClick={() => setShowAdiPopup(true)}>
                           <span className="badge-main" style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%) rotate(-2deg)', zIndex: 2, background: 'var(--pink-primary)' }}>COLLABORATOR</span>
                           <img src="collaborators/adi sankara.png" alt="Adi Shankara" loading="lazy" style={{ height: '90px', width: 'auto', maxWidth: '100%', objectFit: 'contain', marginTop: '1.5rem' }} />
                           <div style={{ textAlign: 'center' }}>
@@ -1872,7 +2041,7 @@ function App() {
                           </div>
                         </div>
 
-                        <div className="partner-card-wide">
+                        <div className="partner-card-wide clickable" onClick={() => setShowAikyamPopup(true)}>
                           <span className="badge-main" style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%) rotate(-2deg)', zIndex: 2, background: 'var(--pink-primary)' }}>COLLABORATOR</span>
                           <img src="collaborators/aikyam.webp" alt="Aikyam Space" loading="lazy" style={{ height: '90px', width: 'auto', maxWidth: '100%', objectFit: 'contain', marginTop: '1.5rem' }} />
                           <div style={{ textAlign: 'center' }}>
@@ -1888,10 +2057,10 @@ function App() {
                         </div>
                       </div>
 
-                      {/* Sponsor Placeholders Section */}
+                      {/* Sponsor Placeholders Section
                       <div style={{ textAlign: 'center', marginTop: '4rem' }}>
                         <h3 className="handwritten" style={{ fontSize: '2rem', color: 'var(--text-navy)', marginBottom: '1.5rem' }}>Sponsors</h3>
-                        <div className="sponsor-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+                        <div className="sponsor-grid">
                           {[1, 2, 3, 4].map(i => (
                             <div key={i} className="sponsor-placeholder" style={{ height: '120px' }}>
                               YOUR LOGO HERE
@@ -1899,6 +2068,7 @@ function App() {
                           ))}
                         </div>
                       </div>
+                      */}
                     </div>
                   ) : section.type === 'gallery' ? (
                     <div className="section-content">
@@ -2272,13 +2442,6 @@ function App() {
                   <h1 className="text-3d" style={{ fontSize: '3.5rem' }}>Admin Command Center</h1>
                   <p className="handwritten" style={{ fontSize: '1.2rem' }}>Master control for the Starlet 5.0 galaxy!</p>
                 </div>
-                <div className="admin-quick-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <button className="join-btn" style={{ background: 'var(--yellow-primary)', color: '#000', padding: '0.5rem 1rem', fontSize: '0.9rem' }} onClick={() => setAdminActiveTab('mentor')}>
-                    SWITCH TO MENTOR VIEW ⇄
-                  </button>
-                  <button className="logout-btn" onClick={handleLogout}>LOGOUT ADMIN</button>
-                  <div className="admin-back-link" onClick={() => setActiveView('landing')}>← Back to Home</div>
-                </div>
               </div>
 
               <div className="admin-stats-strip">
@@ -2296,8 +2459,23 @@ function App() {
                     <span>Verified Mentors</span>
                   </div>
                 </div>
-                <div className="admin-stat-card warning">
-                  <div className="stat-icon"><img src="icons/calendar.svg" alt="pending" /></div>
+                <div
+                  className="admin-stat-card warning"
+                  style={{
+                    cursor: allUsers.filter(u => u.user_role === 'mentor' && !u.is_approved).length > 0 ? 'pointer' : 'default'
+                  }}
+                  onClick={() => {
+                    if (allUsers.filter(u => u.user_role === 'mentor' && !u.is_approved).length > 0) {
+                      document.getElementById('pending-approval-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                >
+                  <div className="stat-icon">
+                    <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="var(--text-navy)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
                   <div className="stat-info">
                     <strong>{allUsers.filter(u => u.user_role === 'mentor' && !u.is_approved).length}</strong>
                     <span>Pending Approval</span>
@@ -2697,7 +2875,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="admin-panel mentor-queue">
+                <div className="admin-panel mentor-queue" id="pending-approval-section">
                   <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Mentor Approval Queue</h2>
                   <div className="approval-list">
                     {(() => {
@@ -2758,70 +2936,161 @@ function App() {
                           <th>Role</th>
                           <th>Status</th>
                           <th>Venue</th>
-                          <th>Selected Track</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {allUsers.map(u => (
-                          <tr key={u.id}>
-                            <td>
-                              <div className="table-user">
-                                <strong>{u.full_name}</strong>
-                                <span>{u.email}</span>
-                              </div>
-                            </td>
-                            <td><span className="role-badge">{u.user_role}</span></td>
-                            <td>
-                              <span className={`status-dot ${u.is_approved ? 'active' : 'idle'}`}></span>
-                              {u.is_approved ? 'Verified' : (u.user_role === 'attendee' ? 'Active' : 'Pending')}
-                            </td>
-                            <td>
-                              <div className="table-venue-select">
-                                <select
-                                  className="admin-select-small"
-                                  value={u.venue || ''}
-                                  onChange={(e) => handleManualVenueChange(u.id, e.target.value)}
-                                >
-                                  <option value="">Unassigned</option>
-                                  {venues.map(v => (
-                                    <option key={v.id} value={v.name}>{v.name}</option>
-                                  ))}
-                                  <option value="Waitlisted/Overflow">Waitlisted</option>
-                                </select>
-                              </div>
-                            </td>
-                            <td>
-                              <div className="table-venue-select">
-                                <select
-                                  className="admin-select-small"
-                                  value={u.problem_statement_id || ''}
-                                  onChange={(e) => handleAdminUpdateUserPS(u.id, e.target.value)}
-                                >
-                                  <option value="">No Selection</option>
-                                  {problemStatements.map(ps => (
-                                    <option key={ps.id} value={ps.id}>{ps.title}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            </td>
-                            <td>
-                              <div className="table-actions">
-                                <button className="btn-table-action" title="View details">DETAILS</button>
-                                <button
-                                  className="btn-table-action delete"
-                                  title="Delete user"
-                                  onClick={() => handleDeleteUser(u.id, u.full_name)}
-                                >
-                                  REMOVE
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
+                        {allUsers.slice(0, visibleUserCount).map(u => (
+                          <React.Fragment key={u.id}>
+                            <tr className={expandedUserId === u.id ? 'expanded-row' : ''}>
+                              <td>
+                                <div className="table-user">
+                                  <strong>{u.full_name}</strong>
+                                  <span>{u.email}</span>
+                                </div>
+                              </td>
+                              <td><span className="role-badge">{u.user_role}</span></td>
+                              <td>
+                                <span className={`status-dot ${u.is_approved ? 'active' : 'idle'}`}></span>
+                                {u.is_approved ? 'Verified' : (u.user_role === 'attendee' ? 'Active' : 'Pending')}
+                              </td>
+                              <td>
+                                <div className="table-venue-select">
+                                  <select
+                                    className="admin-select-small"
+                                    value={u.venue || ''}
+                                    onChange={(e) => handleManualVenueChange(u.id, e.target.value)}
+                                  >
+                                    <option value="">Unassigned</option>
+                                    {venues.map(v => (
+                                      <option key={v.id} value={v.name}>{v.name}</option>
+                                    ))}
+                                    <option value="Waitlisted/Overflow">Waitlisted</option>
+                                  </select>
+                                </div>
+                              </td>
+                              <td>
+                                <div className="table-actions">
+                                  <button
+                                    className={`btn-table-action ${expandedUserId === u.id ? 'active' : ''}`}
+                                    title="View details"
+                                    onClick={() => setExpandedUserId(expandedUserId === u.id ? null : u.id)}
+                                  >
+                                    {expandedUserId === u.id ? 'HIDE ▲' : 'DETAILS ▼'}
+                                  </button>
+                                  <button
+                                    className="btn-table-action delete"
+                                    title="Delete user"
+                                    onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                  >
+                                    REMOVE
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {expandedUserId === u.id && (
+                              <tr key={`${u.id}-details`} className="user-details-row">
+                                <td colSpan={5}>
+                                  <div className="user-details-dropdown">
+                                    <div className="user-details-grid" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '2rem', alignItems: 'start' }}>
+                                      <div className="user-detail-photo">
+                                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--pink-primary)', background: '#fff' }}>
+                                          {u.avatar_url ? (
+                                            <img src={u.avatar_url} alt={u.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                          ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--yellow-star)', color: 'var(--text-navy)', fontSize: '2rem', fontWeight: 'bold' }}>
+                                              {u.full_name?.charAt(0)?.toUpperCase()}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="user-details-grid-fields" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem 2rem', width: '100%' }}>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Full Name</span>
+                                        <span className="detail-value">{u.full_name || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Email</span>
+                                        <span className="detail-value">{u.email || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Role</span>
+                                        <span className="detail-value" style={{ textTransform: 'capitalize' }}>{u.user_role || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Role Title</span>
+                                        <span className="detail-value">{u.role_title || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Phone</span>
+                                        <span className="detail-value">{u.phone || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">College / Org</span>
+                                        <span className="detail-value">{u.college || u.venue || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Team</span>
+                                        <span className="detail-value">{u.team_name || '—'}</span>
+                                      </div>
+                                      <div className="user-detail-item">
+                                        <span className="detail-label">Approval Status</span>
+                                        <span className="detail-value" style={{ color: u.is_approved ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
+                                          {u.is_approved ? '✓ Verified' : '⏳ Pending'}
+                                        </span>
+                                      </div>
+                                      {u.user_role === 'mentor' && (
+                                        <>
+                                          <div className="user-detail-item">
+                                            <span className="detail-label">LinkedIn</span>
+                                            <span className="detail-value">
+                                              {u.linkedin ? <a href={u.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue-shadow)' }}>{u.linkedin}</a> : '—'}
+                                            </span>
+                                          </div>
+                                          <div className="user-detail-item">
+                                            <span className="detail-label">Tech Stack</span>
+                                            <span className="detail-value">{Array.isArray(u.stack) && u.stack.length ? u.stack.join(', ') : '—'}</span>
+                                          </div>
+                                          <div className="user-detail-item" style={{ gridColumn: '1 / -1' }}>
+                                            <span className="detail-label">Bio</span>
+                                            <span className="detail-value">{u.bio || '—'}</span>
+                                          </div>
+                                        </>
+                                      )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  
+                  {allUsers.length > 5 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
+                      {visibleUserCount < allUsers.length && (
+                        <button 
+                          className="join-btn" 
+                          onClick={() => setVisibleUserCount(prev => Math.min(prev + 5, allUsers.length))}
+                          style={{ padding: '0.8rem 2rem', fontSize: '1rem' }}
+                        >
+                          SHOW MORE ▼
+                        </button>
+                      )}
+                      {visibleUserCount > 5 && (
+                        <button 
+                          className="join-btn" 
+                          onClick={() => setVisibleUserCount(5)}
+                          style={{ padding: '0.8rem 2rem', fontSize: '1rem', background: '#fff', color: 'var(--text-navy)' }}
+                        >
+                          SHOW LESS ▲
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* PROJECT SUBMISSIONS OVERVIEW */}
@@ -2919,7 +3188,7 @@ function App() {
                   <img
                     src={user.avatarUrl || 'icons/user-profile.svg'}
                     alt="avatar"
-                    style={{ objectFit: user.avatarUrl ? 'cover' : 'contain', borderRadius: '50%', width: '100%', height: '100%' }}
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
                   <label className="upload-overlay" title="Change photo">
                     <input
@@ -2946,118 +3215,193 @@ function App() {
                 </div>
 
                 <div className="profile-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
-                  {user.role === 'admin' && (
-                    <button className="join-btn" style={{ background: 'var(--yellow-primary)', color: '#000' }} onClick={() => setAdminActiveTab('admin')}>
-                      SWITCH TO ADMIN VIEW ⇄
-                    </button>
-                  )}
-                  <button className="join-btn" onClick={updateProfile}>SAVE CHANGES</button>
-                  <button className="logout-btn" onClick={handleLogout}>LOGOUT</button>
+                  <button
+                    className="join-btn"
+                    onClick={updateProfile}
+                    disabled={!hasProfileChanged}
+                    style={{ opacity: hasProfileChanged ? 1 : 0.45, cursor: hasProfileChanged ? 'pointer' : 'not-allowed', transition: 'opacity 0.2s' }}
+                  >
+                    SAVE CHANGES
+                  </button>
                 </div>
-                <div onClick={() => setActiveView('landing')} style={{ marginTop: '2rem', cursor: 'pointer', color: 'var(--blue-shadow)' }}>← Back to Home</div>
               </div>
 
               <div className="profile-info">
-                <div className="profile-card-group">
-                  <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Professional Info</h2>
-                  <div className="profile-field">
-                    <label>Expertise / Role</label>
-                    <input
-                      type="text"
-                      className="profile-input"
-                      value={user.role_title || ''}
-                      onChange={(e) => setUser({ ...user, role_title: e.target.value })}
-                      placeholder="e.g. Senior Software Architect, Product Designer..."
-                    />
-                  </div>
-                  <div className="profile-field">
-                    <label>Company / Organization</label>
-                    <input
-                      type="text"
-                      className="profile-input"
-                      value={user.venue || ''} // Using venue field for company as per common profile patterns
-                      onChange={(e) => setUser({ ...user, venue: e.target.value })}
-                      placeholder="e.g. Google, Meta, Independent..."
-                    />
-                  </div>
-                  <div className="profile-field">
-                    <label>My Mentoring Stack</label>
-                    <div className="tech-tag-container">
-                      {user.stack.map(s => (
+                <div className="mentor-profile-grid">
+                  {/* Left Column: Professional Info */}
+                  <div>
+                    <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Professional Info</h2>
+                    
+                    <div className="profile-field">
+                      <label>Expertise / Role</label>
+                      <input
+                        type="text"
+                        className="profile-input"
+                        value={user.role_title || ''}
+                        onChange={(e) => setUser({ ...user, role_title: e.target.value })}
+                        placeholder="e.g. Senior Software Architect, Product Designer..."
+                      />
+                    </div>
+                    
+                    <div className="profile-field">
+                      <label>Company / Organization</label>
+                      <input
+                        type="text"
+                        className="profile-input"
+                        value={user.venue || ''}
+                        onChange={(e) => setUser({ ...user, venue: e.target.value })}
+                        placeholder="e.g. Google, Meta, Independent..."
+                      />
+                    </div>
+                    
+                    <div className="profile-field">
+                      <label>Years of Experience</label>
+                      <input
+                        type="number"
+                        className="profile-input"
+                        min="0"
+                        max="50"
+                        value={user.yearsOfExperience || ''}
+                        onChange={(e) => setUser({ ...user, yearsOfExperience: e.target.value })}
+                        placeholder="e.g. 5"
+                        style={{ maxWidth: '160px' }}
+                      />
+                    </div>
+                    
+                    <div className="profile-field">
+                      <label>My Mentoring Stack</label>
+                      <div className="tech-tag-container">
+                        {user.stack.map(s => (
+                          <span 
+                            key={s} 
+                            className="tech-tag" 
+                            title="Click to remove"
+                            onClick={() => {
+                              if (confirm(`Remove ${s} from your skills?`)) {
+                                setUser(prev => ({ ...prev, stack: prev.stack.filter(skill => skill !== s) }));
+                              }
+                            }}
+                          >
+                            {s} ×
+                          </span>
+                        ))}
                         <span 
-                          key={s} 
                           className="tech-tag" 
-                          title="Click to remove"
+                          style={{ opacity: 0.5, cursor: 'pointer' }}
                           onClick={() => {
-                            if (confirm(`Remove ${s} from your skills?`)) {
-                              setUser(prev => ({ ...prev, stack: prev.stack.filter(skill => skill !== s) }));
+                            const newSkill = prompt("Enter new skill (e.g. TypeScript, Python, UI Design):");
+                            if (newSkill && newSkill.trim()) {
+                              setUser(prev => ({ ...prev, stack: [...prev.stack, newSkill.trim()] }));
                             }
                           }}
                         >
-                          {s} ×
+                          + Add Skill
                         </span>
-                      ))}
-                      <span 
-                        className="tech-tag" 
-                        style={{ opacity: 0.5, cursor: 'pointer' }}
-                        onClick={() => {
-                          const newSkill = prompt("Enter new skill (e.g. TypeScript, Python, UI Design):");
-                          if (newSkill && newSkill.trim()) {
-                            setUser(prev => ({ ...prev, stack: [...prev.stack, newSkill.trim()] }));
-                          }
-                        }}
-                      >
-                        + Add Skill
-                      </span>
-                    </div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Social Links</label>
-                    <div className="social-connect-grid">
-                      <div className="social-connect-item">
-                        <img src="icons/github.svg" alt="GitHub" />
-                        <input
-                          type="text"
-                          placeholder="GitHub URL"
-                          value={user.socials.github}
-                          onChange={(e) => setUser({ ...user, socials: { ...user.socials, github: e.target.value } })}
-                        />
                       </div>
-                      <div className="social-connect-item">
-                        <img src="icons/linkedin.svg" alt="LinkedIn" />
-                        <input
-                          type="text"
-                          placeholder="LinkedIn URL"
-                          value={user.socials.linkedin}
-                          onChange={(e) => setUser({ ...user, socials: { ...user.socials, linkedin: e.target.value } })}
-                        />
+                    </div>
+                    
+                    <div className="profile-field" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>
+                      <label>Languages Spoken</label>
+                      <div className="tech-tag-container">
+                        {(user.languages || []).map(lang => (
+                          <span
+                            key={lang}
+                            className="tech-tag"
+                            title="Click to remove"
+                            style={{ background: 'var(--blue-shadow)', color: '#fff' }}
+                            onClick={() => {
+                              if (confirm(`Remove ${lang}?`)) {
+                                setUser(prev => ({ ...prev, languages: prev.languages.filter(l => l !== lang) }));
+                              }
+                            }}
+                          >
+                            {lang} ×
+                          </span>
+                        ))}
+                        <span
+                          className="tech-tag"
+                          style={{ opacity: 0.5, cursor: 'pointer' }}
+                          onClick={() => {
+                            const newLang = prompt("Enter a language (e.g. English, Tamil, Hindi):");
+                            if (newLang && newLang.trim()) {
+                              setUser(prev => ({ ...prev, languages: [...(prev.languages || []), newLang.trim()] }));
+                            }
+                          }}
+                        >
+                          + Add Language
+                        </span>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="requests-section" style={{ marginTop: '3rem' }}>
-                  <h2 className="text-3d" style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>Attendee Requests</h2>
-                  {!user.isApproved && (
-                    <div className="warning-box" style={{ marginBottom: '1.5rem', background: '#fff9e6', border: '2px solid #ffcc00', padding: '1rem', borderRadius: '15px', color: '#856404' }}>
-                      Your account is pending approval. You will be able to accept requests once verified by the Admin!
-                    </div>
-                  )}
-                  <div className="request-list">
-                    {mentorRequests.map(req => (
-                      <div key={req.id} className="request-card">
-                        <div className="request-user">
-                          <strong>{req.profiles?.full_name || 'Anonymous'}</strong>
-                          <span>{req.profiles?.email}</span>
+                  {/* Right Column: Social Links & Requests */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                    <div>
+                      <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Social Links</h2>
+                      <div className="social-connect-grid">
+                        <div className="social-connect-item">
+                          <img src="icons/github.svg" alt="GitHub" />
+                          <input
+                            type="text"
+                            placeholder="GitHub URL"
+                            value={user.socials.github}
+                            onChange={(e) => setUser({ ...user, socials: { ...user.socials, github: e.target.value } })}
+                          />
                         </div>
-                        <p className="request-msg">"{req.message}"</p>
-                        <div className="request-actions">
-                          <button className="btn-small accept" disabled={!user.isApproved} onClick={() => handleAcceptRequest(req.id)}>ACCEPT</button>
-                          <button className="btn-small decline" onClick={() => handleDeclineRequest(req.id)}>DECLINE</button>
+                        <div className="social-connect-item">
+                          <img src="icons/linkedin.svg" alt="LinkedIn" />
+                          <input
+                            type="text"
+                            placeholder="LinkedIn URL"
+                            value={user.socials.linkedin}
+                            onChange={(e) => setUser({ ...user, socials: { ...user.socials, linkedin: e.target.value } })}
+                          />
+                        </div>
+                        <div className="social-connect-item">
+                          <span style={{ fontSize: '1.4rem', width: '24px', textAlign: 'center' }}>𝕏</span>
+                          <input
+                            type="text"
+                            placeholder="Twitter / X URL"
+                            value={user.socials.twitter}
+                            onChange={(e) => setUser({ ...user, socials: { ...user.socials, twitter: e.target.value } })}
+                          />
+                        </div>
+                        <div className="social-connect-item">
+                          <span style={{ fontSize: '1.2rem', width: '24px', textAlign: 'center' }}>🌐</span>
+                          <input
+                            type="text"
+                            placeholder="Portfolio / Website URL"
+                            value={user.website || ''}
+                            onChange={(e) => setUser({ ...user, website: e.target.value })}
+                          />
                         </div>
                       </div>
-                    ))}
-                    {mentorRequests.length === 0 && <p className="empty-msg" style={{ opacity: 0.5 }}>No active help requests yet. Stay tuned!</p>}
+                    </div>
+
+                    <div className="requests-section" style={{ borderTop: '2px dashed #eee', paddingTop: '1.5rem', marginTop: 0 }}>
+                      <h2 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Attendee Requests</h2>
+                      {!user.isApproved && (
+                        <div className="warning-box" style={{ marginBottom: '1.5rem', background: '#fff9e6', border: '2px solid #ffcc00', padding: '1rem', borderRadius: '15px', color: '#856404' }}>
+                          Your account is pending approval. You will be able to accept requests once verified by the Admin!
+                        </div>
+                      )}
+                      <div className="request-list" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                        {mentorRequests.map(req => (
+                          <div key={req.id} className="request-card">
+                            <div className="request-user">
+                              <strong>{req.profiles?.full_name || 'Anonymous'}</strong>
+                              <span>{req.profiles?.email}</span>
+                            </div>
+                            <p className="request-msg">"{req.message}"</p>
+                            <div className="request-actions">
+                              <button className="btn-small accept" disabled={!user.isApproved} onClick={() => handleAcceptRequest(req.id)}>ACCEPT</button>
+                              <button className="btn-small decline" onClick={() => handleDeclineRequest(req.id)}>DECLINE</button>
+                            </div>
+                          </div>
+                        ))}
+                        {mentorRequests.length === 0 && <p className="empty-msg" style={{ opacity: 0.5 }}>No active help requests yet. Stay tuned!</p>}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3099,10 +3443,15 @@ function App() {
                       {isSoundEnabled ? "AUDIO ON" : "AUDIO OFF"}
                     </div>
                   </div>
-                  <button className="join-btn" onClick={updateProfile}>SAVE CHANGES</button>
-                  <button className="logout-btn" onClick={handleLogout}>LOGOUT</button>
+                  <button
+                    className="join-btn"
+                    onClick={updateProfile}
+                    disabled={!hasProfileChanged}
+                    style={{ opacity: hasProfileChanged ? 1 : 0.45, cursor: hasProfileChanged ? 'pointer' : 'not-allowed', transition: 'opacity 0.2s' }}
+                  >
+                    SAVE CHANGES
+                  </button>
                 </div>
-                <div onClick={() => setActiveView('landing')} style={{ marginTop: '2rem', cursor: 'pointer', color: 'var(--blue-shadow)' }}>← Back to Home</div>
               </div>
               <div className="profile-info">
                 <div className="profile-field">
@@ -3609,6 +3958,88 @@ function App() {
         </div>
       )}
 
+      {showAikyamPopup && (
+        <div className="modal-overlay" onClick={() => setShowAikyamPopup(false)}>
+          <div className="modal-content about-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowAikyamPopup(false)}>×</button>
+            <div className="modal-inner">
+              <div className="modal-visual" style={{ background: '#e6f4ea', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+                <img src="collaborators/aikyam.webp" alt="Aikyam Space" style={{ maxWidth: '80%', height: 'auto', objectFit: 'contain' }} />
+              </div>
+              <div className="modal-text" style={{ padding: '2.5rem 2rem' }}>
+                <h2 className="text-3d" style={{ marginBottom: '0.8rem', fontSize: '2.2rem' }}>aikyam space</h2>
+                <p className="handwritten" style={{ fontSize: '1.2rem', color: '#2eac6d', marginTop: '-0.5rem', marginBottom: '1.2rem' }}>
+                  a [ space ] for inspiring action
+                </p>
+                <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1rem' }}>
+                  <strong>aikyam space</strong> is a proudly not-for-profit community initiative in Fort Kochi, Kerala. It provides a warm, open gathering place where local communities learn, share skills, and spark collective action.
+                </p>
+                <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+                  <strong>Key Initiatives:</strong> Community hub workshops, hands-on skill sharing (stitching, upcycling, carpentry), change-maker residencies (Tink-Her-Hack), and inclusive listening circles.
+                </p>
+                
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1.5rem' }}>
+                  <a 
+                    href="https://aikyam.space/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="join-btn"
+                    style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center', padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}
+                  >
+                    VISIT WEBSITE
+                  </a>
+                </div>
+                
+                <div className="modal-footer-brand" style={{ color: '#2eac6d', marginTop: '2rem' }}>
+                  A Proudly Not-for-Profit Initiative
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAdiPopup && (
+        <div className="modal-overlay" onClick={() => setShowAdiPopup(false)}>
+          <div className="modal-content about-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowAdiPopup(false)}>×</button>
+            <div className="modal-inner">
+              <div className="modal-visual" style={{ background: '#e8eff6', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+                <img src="collaborators/adi sankara.png" alt="Adi Shankara" style={{ maxWidth: '80%', height: 'auto', objectFit: 'contain' }} />
+              </div>
+              <div className="modal-text" style={{ padding: '2.5rem 2rem' }}>
+                <h2 className="text-3d" style={{ marginBottom: '0.8rem', fontSize: '2.2rem' }}>adi shankara</h2>
+                <p className="handwritten" style={{ fontSize: '1.2rem', color: '#1565c0', marginTop: '-0.5rem', marginBottom: '1.2rem' }}>
+                  institute of engineering & technology
+                </p>
+                <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1rem' }}>
+                  <strong>Adi Shankara Institute of Engineering and Technology (ASIET)</strong> is a premier engineering institution located in Kalady, Kerala. Established in 2001, it is run by the Adi Sankara Trust and is renowned for its academic excellence and focus on innovation.
+                </p>
+                <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+                  <strong>Main Venue Partner:</strong> The college campus serves as the primary hub for Starlet 5.0, hosting the main hackathon tracks, prototyping challenges, and technical mentoring sessions.
+                </p>
+                
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1.5rem' }}>
+                  <a 
+                    href="https://www.adishankara.ac.in/" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="join-btn"
+                    style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center', padding: '0.6rem 1.5rem', fontSize: '0.9rem' }}
+                  >
+                    VISIT WEBSITE
+                  </a>
+                </div>
+                
+                <div className="modal-footer-brand" style={{ color: '#1565c0', marginTop: '2rem' }}>
+                  Main Venue Partner
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedTrack && (
         <div className="modal-overlay" onClick={() => setSelectedTrack(null)}>
           <div className="modal-content track-modal" onClick={e => e.stopPropagation()}>
@@ -3699,32 +4130,44 @@ function App() {
             <div className="mentor-modal-content" style={{ alignItems: 'start' }}>
               
               {/* Left Column: Profile Card */}
-              <div className="mentor-modal-side" style={{ background: '#fff', border: '4px solid var(--text-navy)', borderRadius: '30px', padding: '2.5rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxShadow: '8px 8px 0px var(--blue-shadow)' }}>
-                <div className="mentor-modal-photo" style={{ width: '170px', height: '170px', borderRadius: '50%', overflow: 'hidden', border: '5px solid var(--pink-primary)', boxShadow: '6px 6px 0px var(--yellow-star)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--bg-cream)' }}>
+              <div className="mentor-modal-side" style={{ background: '#fff', border: '4px solid var(--text-navy)', borderRadius: '30px', padding: '1.5rem 1.2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxShadow: '8px 8px 0px var(--blue-shadow)', width: '100%' }}>
+                <div className="mentor-modal-photo" style={{ width: '130px', height: '130px', borderRadius: '50%', overflow: 'hidden', border: '4px solid var(--pink-primary)', boxShadow: '4px 4px 0px var(--yellow-star)', marginBottom: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--bg-cream)' }}>
                   <img src={selectedMentor.avatar_url || "icons/user-profile.svg"} alt="mentor" style={{ width: '100%', height: '100%', objectFit: selectedMentor.avatar_url ? 'cover' : 'contain' }} />
                 </div>
-                <h3 style={{ fontSize: '1.6rem', marginBottom: '0.8rem', fontFamily: "'Fredoka One', cursive", color: 'var(--text-navy)', lineHeight: '1.2' }}>{selectedMentor.role_title}</h3>
-                <span style={{ background: 'var(--bg-cream)', border: '2px solid var(--text-navy)', borderRadius: '15px', padding: '0.4rem 1rem', fontSize: '0.95rem', fontWeight: '900', color: 'var(--text-navy)', marginTop: '0.5rem', display: 'inline-block' }}>🏢 {selectedMentor.company}</span>
+                <h3 style={{ fontSize: '1.4rem', marginBottom: '0.6rem', fontFamily: "'Fredoka One', cursive", color: 'var(--text-navy)', lineHeight: '1.2' }}>{selectedMentor.role_title}</h3>
                 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
+                  <span style={{ background: 'var(--bg-cream)', border: '2px solid var(--text-navy)', borderRadius: '15px', padding: '0.4rem 0.8rem', fontSize: '0.85rem', fontWeight: '900', color: 'var(--text-navy)', display: 'inline-block', width: '100%', maxWidth: '220px' }}>🏢 {selectedMentor.company}</span>
+                  {selectedMentor.years_of_experience && (
+                    <span style={{ background: 'var(--bg-cream)', border: '2px solid var(--text-navy)', borderRadius: '15px', padding: '0.4rem 0.8rem', fontSize: '0.85rem', fontWeight: '900', color: 'var(--text-navy)', display: 'inline-block', width: '100%', maxWidth: '220px' }}>⏳ {selectedMentor.years_of_experience} Years Exp</span>
+                  )}
+                </div>
+
                 {(() => {
                   const profile = allUsers.find(u => u.id === selectedMentor.profile_id) || {};
-                  const socials = profile.socials || selectedMentor.socials;
-                  if (!socials || (!socials.github && !socials.linkedin && !socials.twitter)) return null;
+                  const socials = profile.socials || selectedMentor.socials || {};
+                  const website = selectedMentor.website_url || profile.website_url;
+                  if (!socials && !website) return null;
                   return (
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1.2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                       {socials.github && (
-                        <a href={socials.github.startsWith('http') ? socials.github : `https://${socials.github}`} target="_blank" rel="noopener noreferrer" style={{ width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '3px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)' }}>
-                          <img src="icons/github.svg" alt="GitHub" style={{ width: '22px' }} />
+                        <a href={socials.github.startsWith('http') ? socials.github : `https://${socials.github}`} target="_blank" rel="noopener noreferrer" style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '2.5px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)' }}>
+                          <img src="icons/github.svg" alt="GitHub" style={{ width: '18px' }} />
                         </a>
                       )}
                       {socials.linkedin && (
-                        <a href={socials.linkedin.startsWith('http') ? socials.linkedin : `https://${socials.linkedin}`} target="_blank" rel="noopener noreferrer" style={{ width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '3px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)' }}>
-                          <img src="icons/linkedin.svg" alt="LinkedIn" style={{ width: '22px' }} />
+                        <a href={socials.linkedin.startsWith('http') ? socials.linkedin : `https://${socials.linkedin}`} target="_blank" rel="noopener noreferrer" style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '2.5px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)' }}>
+                          <img src="icons/linkedin.svg" alt="LinkedIn" style={{ width: '18px' }} />
                         </a>
                       )}
                       {socials.twitter && (
-                        <a href={socials.twitter.startsWith('http') ? socials.twitter : `https://${socials.twitter}`} target="_blank" rel="noopener noreferrer" style={{ width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '3px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)' }}>
-                          <img src="icons/twitter.svg" alt="Twitter" style={{ width: '22px' }} />
+                        <a href={socials.twitter.startsWith('http') ? socials.twitter : `https://${socials.twitter}`} target="_blank" rel="noopener noreferrer" style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '2.5px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)' }}>
+                          <img src="icons/twitter.svg" alt="Twitter" style={{ width: '18px' }} />
+                        </a>
+                      )}
+                      {website && (
+                        <a href={website.startsWith('http') ? website : `https://${website}`} target="_blank" rel="noopener noreferrer" style={{ width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-cream)', border: '2.5px solid var(--text-navy)', borderRadius: '50%', transition: 'all 0.2s', boxShadow: '3px 3px 0px var(--text-navy)', fontSize: '1rem' }} title="Visit Website">
+                          🌐
                         </a>
                       )}
                     </div>
@@ -3733,28 +4176,28 @@ function App() {
               </div>
 
               {/* Right Column: Info & Skills Cards */}
-              <div className="mentor-modal-main" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div className="mentor-modal-main" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', flex: 1 }}>
                 
                 {/* About Box */}
-                <div className="mentor-info-card" style={{ background: '#fff', border: '4px solid var(--text-navy)', borderRadius: '30px', padding: '2rem 2.5rem', boxShadow: '8px 8px 0px var(--pink-primary)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.2rem' }}>
-                    <span style={{ fontSize: '1.6rem' }}>💡</span>
-                    <h4 style={{ fontSize: '1.6rem', color: 'var(--text-navy)', margin: 0, fontFamily: "'Fredoka One', cursive" }}>About Me</h4>
+                <div className="mentor-info-card" style={{ background: '#fff', border: '3.5px solid var(--text-navy)', borderRadius: '25px', padding: '1.2rem 1.8rem', boxShadow: '6px 6px 0px var(--pink-primary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                    <span style={{ fontSize: '1.3rem' }}>💡</span>
+                    <h4 style={{ fontSize: '1.3rem', color: 'var(--text-navy)', margin: 0, fontFamily: "'Fredoka One', cursive" }}>About Me</h4>
                   </div>
-                  <p style={{ fontSize: '1.15rem', lineHeight: '1.6', color: '#333', margin: 0, fontStyle: selectedMentor.bio ? 'normal' : 'italic' }}>
+                  <p style={{ fontSize: '1rem', lineHeight: '1.5', color: '#333', margin: 0, fontStyle: selectedMentor.bio ? 'normal' : 'italic' }}>
                     {selectedMentor.bio || 'Experienced professional dedicated to guiding innovators and hackers to success.'}
                   </p>
                 </div>
 
                 {/* Skills Box */}
-                <div className="mentor-info-card" style={{ background: '#fff', border: '4px solid var(--text-navy)', borderRadius: '30px', padding: '2rem 2.5rem', boxShadow: '8px 8px 0px var(--yellow-star)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.5rem' }}>
-                    <span style={{ fontSize: '1.6rem' }}>⚡</span>
-                    <h4 style={{ fontSize: '1.6rem', color: 'var(--text-navy)', margin: 0, fontFamily: "'Fredoka One', cursive" }}>Mentoring Stack</h4>
+                <div className="mentor-info-card" style={{ background: '#fff', border: '3.5px solid var(--text-navy)', borderRadius: '25px', padding: '1.2rem 1.8rem', boxShadow: '6px 6px 0px var(--yellow-star)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '1.3rem' }}>⚡</span>
+                    <h4 style={{ fontSize: '1.3rem', color: 'var(--text-navy)', margin: 0, fontFamily: "'Fredoka One', cursive" }}>Mentoring Stack</h4>
                   </div>
-                  <div className="mentor-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem' }}>
+                  <div className="mentor-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
                     {(selectedMentor.expertise || []).map(tag => (
-                      <span key={tag} className="tech-tag" style={{ fontSize: '1rem', padding: '0.6rem 1.2rem', background: 'var(--yellow-star)', color: 'var(--text-navy)', border: '3px solid var(--text-navy)', borderRadius: '20px', fontWeight: '900', boxShadow: '4px 4px 0px var(--text-navy)' }}>
+                      <span key={tag} className="tech-tag" style={{ fontSize: '0.85rem', padding: '0.4rem 1rem', background: 'var(--yellow-star)', color: 'var(--text-navy)', border: '2px solid var(--text-navy)', borderRadius: '20px', fontWeight: '900', boxShadow: '3px 3px 0px var(--text-navy)' }}>
                         {tag}
                       </span>
                     ))}
@@ -3764,9 +4207,26 @@ function App() {
                   </div>
                 </div>
 
+                {/* Languages Box */}
+                {selectedMentor.languages && selectedMentor.languages.length > 0 && (
+                  <div className="mentor-info-card" style={{ background: '#fff', border: '3.5px solid var(--text-navy)', borderRadius: '25px', padding: '1.2rem 1.8rem', boxShadow: '6px 6px 0px var(--blue-shadow)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                      <span style={{ fontSize: '1.6rem' }}>🗣️</span>
+                      <h4 style={{ fontSize: '1.3rem', color: 'var(--text-navy)', margin: 0, fontFamily: "'Fredoka One', cursive" }}>Languages Spoken</h4>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+                      {selectedMentor.languages.map(lang => (
+                        <span key={lang} className="tech-tag" style={{ fontSize: '0.85rem', padding: '0.4rem 1rem', background: 'var(--blue-shadow)', color: '#fff', border: '2px solid var(--text-navy)', borderRadius: '20px', fontWeight: '900', boxShadow: '3px 3px 0px var(--text-navy)' }}>
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Attendee Action Button */}
-                {user.role === 'attendee' && (
-                  <button className="join-btn" style={{ width: '100%', padding: '1.4rem', fontSize: '1.3rem', background: 'var(--pink-primary)', color: '#fff', border: '4px solid var(--text-navy)', borderRadius: '25px', boxShadow: '8px 8px 0px var(--text-navy)', cursor: 'pointer', fontFamily: "'Fredoka One', cursive", textTransform: 'uppercase', marginTop: '0.5rem' }} onClick={() => { setMentorRequestModal(selectedMentor); setSelectedMentor(null); }}>
+                {isLoggedIn && user.role === 'attendee' && (
+                  <button className="join-btn" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: 'var(--pink-primary)', color: '#fff', border: '3.5px solid var(--text-navy)', borderRadius: '20px', boxShadow: '6px 6px 0px var(--text-navy)', cursor: 'pointer', fontFamily: "'Fredoka One', cursive", textTransform: 'uppercase', marginTop: '0.2rem' }} onClick={() => { setMentorRequestModal(selectedMentor); setSelectedMentor(null); }}>
                     🚀 REQUEST HELP FROM {selectedMentor.full_name.split(' ')[0].toUpperCase()}
                   </button>
                 )}
