@@ -43,50 +43,52 @@ const SponsorsPage = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="sponsors-overview-card" style={{ overflowX: 'auto' }}>
+        <div className="sponsors-overview-card">
           <h2 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>Sponsorship Pitch</h2>
           <p style={{ marginBottom: '2rem', textAlign: 'center' }}>Grab an opportunity to pitch your brand at our event!</p>
           
-          <table className="sponsors-pitch-table">
-            <thead>
-              <tr>
-                <th>Perks</th>
-                <th>Platinum<br/><span style={{fontSize:'0.9rem', fontWeight:'normal'}}>(Rs. 50,000)</span></th>
-                <th>Gold<br/><span style={{fontSize:'0.9rem', fontWeight:'normal'}}>(Rs. 25,000)</span></th>
-                <th>Silver<br/><span style={{fontSize:'0.9rem', fontWeight:'normal'}}>(Rs. 15,000)</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Slot to Speak</td>
-                <td>⭐</td><td></td><td></td>
-              </tr>
-              <tr>
-                <td>Logo in Website</td>
-                <td>⭐</td><td>⭐</td><td>⭐</td>
-              </tr>
-              <tr>
-                <td>Logo featured in event Venue (Banners/standees/posters)</td>
-                <td>⭐</td><td>⭐</td><td></td>
-              </tr>
-              <tr>
-                <td>Logo in meetup announcements, reels and email to attendees</td>
-                <td>⭐</td><td>⭐</td><td>⭐</td>
-              </tr>
-              <tr>
-                <td>Banner at Refreshment Corner</td>
-                <td>⭐</td><td>⭐</td><td></td>
-              </tr>
-              <tr>
-                <td>Social Media Shoutout</td>
-                <td>⭐</td><td>⭐</td><td>⭐</td>
-              </tr>
-              <tr>
-                <td>Provision for Interaction with attendees and distribution of merchandise</td>
-                <td>⭐</td><td></td><td></td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="sponsors-table-wrapper">
+            <table className="sponsors-pitch-table">
+              <thead>
+                <tr>
+                  <th>Perks</th>
+                  <th>Platinum<br/><span style={{fontSize:'0.9rem', fontWeight:'normal'}}>(Rs. 50,000)</span></th>
+                  <th>Gold<br/><span style={{fontSize:'0.9rem', fontWeight:'normal'}}>(Rs. 25,000)</span></th>
+                  <th>Silver<br/><span style={{fontSize:'0.9rem', fontWeight:'normal'}}>(Rs. 15,000)</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Slot to Speak</td>
+                  <td>⭐</td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td>Logo in Website</td>
+                  <td>⭐</td><td>⭐</td><td>⭐</td>
+                </tr>
+                <tr>
+                  <td>Logo featured in event Venue (Banners/standees/posters)</td>
+                  <td>⭐</td><td>⭐</td><td></td>
+                </tr>
+                <tr>
+                  <td>Logo in meetup announcements, reels and email to attendees</td>
+                  <td>⭐</td><td>⭐</td><td>⭐</td>
+                </tr>
+                <tr>
+                  <td>Banner at Refreshment Corner</td>
+                  <td>⭐</td><td>⭐</td><td></td>
+                </tr>
+                <tr>
+                  <td>Social Media Shoutout</td>
+                  <td>⭐</td><td>⭐</td><td>⭐</td>
+                </tr>
+                <tr>
+                  <td>Provision for Interaction with attendees and distribution of merchandise</td>
+                  <td>⭐</td><td></td><td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="sponsors-overview-card padded-large">
