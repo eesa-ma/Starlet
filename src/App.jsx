@@ -4313,30 +4313,119 @@ function App() {
             <div className="certificate-container-live" id="certificate-render" style={{
               width: '1123px',
               height: '794px',
-              backgroundImage: "url('certificate/particpation.png')",
-              backgroundSize: '100% 100%',
-              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#FFFDF5',
+              backgroundImage: `radial-gradient(circle at 90% 10%, rgba(255, 215, 0, 0.15), transparent 50%),
+                                radial-gradient(circle at 10% 90%, rgba(255, 215, 0, 0.08), transparent 50%)`,
               position: 'relative',
               boxSizing: 'border-box',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '65px 90px',
+              border: '2px solid #b8860b'
             }}>
+              {/* Inner gold border */}
               <div style={{
                 position: 'absolute',
-                top: '345px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                fontFamily: "'Playfair Display', serif",
-                fontStyle: 'italic',
-                fontSize: '3.5rem',
-                fontWeight: 700,
-                color: '#4a1210',
-                textAlign: 'center',
-                width: '80%',
-                padding: 0,
-                margin: 0,
-                zIndex: 10
-              }}>
-                {user.name || ''}
+                top: '15px',
+                bottom: '15px',
+                left: '15px',
+                right: '15px',
+                border: '3px solid #d4af37',
+                borderRadius: '4px',
+                pointerEvents: 'none'
+              }}></div>
+
+              {/* Corner decorations */}
+              <div style={{ position: 'absolute', width: '40px', height: '40px', border: '2px solid #d4af37', borderRight: 'none', borderBottom: 'none', top: '20px', left: '20px', pointerEvents: 'none', zIndex: 5 }}></div>
+              <div style={{ position: 'absolute', width: '40px', height: '40px', border: '2px solid #d4af37', borderLeft: 'none', borderBottom: 'none', top: '20px', right: '20px', pointerEvents: 'none', zIndex: 5 }}></div>
+              <div style={{ position: 'absolute', width: '40px', height: '40px', border: '2px solid #d4af37', borderRight: 'none', borderTop: 'none', bottom: '20px', left: '20px', pointerEvents: 'none', zIndex: 5 }}></div>
+              <div style={{ position: 'absolute', width: '40px', height: '40px', border: '2px solid #d4af37', borderLeft: 'none', borderTop: 'none', bottom: '20px', right: '20px', pointerEvents: 'none', zIndex: 5 }}></div>
+
+              {/* Corner ornaments */}
+              <div style={{ position: 'absolute', width: '12px', height: '12px', border: '2px solid #d4af37', borderRadius: '50%', top: '28px', left: '28px', pointerEvents: 'none', zIndex: 5 }}></div>
+              <div style={{ position: 'absolute', width: '12px', height: '12px', border: '2px solid #d4af37', borderRadius: '50%', top: '28px', right: '28px', pointerEvents: 'none', zIndex: 5 }}></div>
+              <div style={{ position: 'absolute', width: '12px', height: '12px', border: '2px solid #d4af37', borderRadius: '50%', bottom: '28px', left: '28px', pointerEvents: 'none', zIndex: 5 }}></div>
+              <div style={{ position: 'absolute', width: '12px', height: '12px', border: '2px solid #d4af37', borderRadius: '50%', bottom: '28px', right: '28px', pointerEvents: 'none', zIndex: 5 }}></div>
+
+              {/* Certificate content */}
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '2.2rem', fontWeight: 900, color: '#4a1210', letterSpacing: '4px', textTransform: 'uppercase', marginTop: '15px', marginBottom: '5px', textAlign: 'center', zIndex: 10 }}>
+                Starlet 5.0 Hackathon 2026
+              </div>
+
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.35rem', fontWeight: 800, color: '#4a1210', letterSpacing: '6px', textTransform: 'uppercase', marginBottom: '45px', textAlign: 'center', zIndex: 10 }}>
+                Certificate of Participation
+              </div>
+
+              <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.5rem', color: '#5c3c24', fontWeight: 400, marginBottom: '20px', textAlign: 'center', zIndex: 10 }}>
+                This is hereby granted to
+              </div>
+
+              <div style={{ width: '70%', borderBottom: '2px solid rgba(92, 60, 36, 0.25)', marginBottom: '25px', position: 'relative', textAlign: 'center', height: '60px', zIndex: 10 }}>
+                <div style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontStyle: 'italic',
+                  fontSize: '3.5rem',
+                  fontWeight: 700,
+                  color: '#4a1210',
+                  lineHeight: 1,
+                  margin: 0,
+                  position: 'absolute',
+                  bottom: '5px',
+                  width: '100%',
+                  left: 0
+                }}>
+                  {user.name || ''}
+                </div>
+              </div>
+
+              <div style={{ maxWidth: '820px', textAlign: 'center', fontFamily: "'Outfit', sans-serif", fontSize: '1.25rem', lineHeight: '1.6', color: '#5c3c24', fontWeight: 500, marginBottom: '20px', zIndex: 10 }}>
+                For participating in <strong style={{ fontWeight: 800, color: '#4a1210' }}>Starlet 5.0</strong> and demonstrating enthusiasm, creativity, and commitment throughout the event.
+              </div>
+
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: '3.8rem', color: '#4a1210', marginBottom: '25px', textAlign: 'center', zIndex: 10 }}>
+                Congratulations!!!!
+              </div>
+
+              {/* Signatures Footer Row */}
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', zIndex: 10 }}>
+                <div style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '5px' }}>
+                    <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2.2rem', color: 'rgba(74, 18, 16, 0.85)', fontWeight: 700, transform: 'rotate(-5deg)' }}>
+                      Maya Menon
+                    </div>
+                  </div>
+                  <div style={{ width: '100%', height: '2px', backgroundColor: '#5c3c24', marginBottom: '8px', opacity: 0.4 }}></div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.95rem', fontWeight: 800, color: '#4a1210', letterSpacing: '1px', marginBottom: '2px' }}>MAYA MENON</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.75rem', fontWeight: 600, color: '#5c3c24', opacity: 0.8, letterSpacing: '0.5px' }}>FOUNDER: MIND EMPOWERED</div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', margin: '0 10px' }}>
+                  <div style={{ height: '55px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                    <img src="certificate/logo.png" alt="Mind Empowered Logo" style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+                  </div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.72rem', fontWeight: 800, color: '#4a1210', lineHeight: 1.3, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                    MIND EMPOWERED<br />
+                    <span style={{ fontSize: '0.55rem', fontWeight: 600, color: '#5c3c24', letterSpacing: '0.8px' }}>ILLUMINATING MINDS, TRANSFORMING LIVES</span><br />
+                    <span style={{ fontSize: '0.52rem', fontWeight: 500, color: '#5c3c24', opacity: 0.85, lineHeight: 1.25, letterSpacing: '0.2px', display: 'block', marginTop: '3px' }}>
+                      NGO DARPAN ID: 84/IV/2021<br />
+                      NATIONAL TRUST REGISTRATION<br />
+                      NUMBER: KL/2022/0309147
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ width: '260px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '5px' }}>
+                    <div style={{ fontFamily: "'Caveat', cursive", fontSize: '2.2rem', color: 'rgba(74, 18, 16, 0.85)', fontWeight: 700, transform: 'rotate(-5deg)' }}>
+                      Sreela Menon
+                    </div>
+                  </div>
+                  <div style={{ width: '100%', height: '2px', backgroundColor: '#5c3c24', marginBottom: '8px', opacity: 0.4 }}></div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.95rem', fontWeight: 800, color: '#4a1210', letterSpacing: '1px', marginBottom: '2px' }}>SREELA MENON</div>
+                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.75rem', fontWeight: 600, color: '#5c3c24', opacity: 0.8, letterSpacing: '0.5px' }}>CO-FOUNDER: MIND EMPOWERED</div>
+                </div>
               </div>
             </div>
           </div>
