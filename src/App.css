@@ -1824,31 +1824,344 @@ header.header-minimal {
     }
 }
 
-/* Prize Cards */
-.prize-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 3rem;
-    margin-top: 3rem;
-}
+/* Redesigned Judges & Prizes Section Styles - Light Neo-Brutalist Arcade Cabinets */
 
-.prize-card {
-    background: #fff;
-    border: 4px solid var(--text-navy);
-    border-radius: 30px;
-    padding: 3rem;
+.arcade-subtitle {
+    font-family: 'Fredoka One', cursive;
+    color: var(--text-navy);
+    font-size: 1.5rem;
     text-align: center;
-    box-shadow: 15px 15px 0px var(--yellow-star);
-    transition: all 0.3s ease;
+    margin-bottom: 2.5rem;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.05);
 }
 
-.prize-card:hover {
-    transform: translateY(-10px);
+/* --- JURY SELECTION GRID --- */
+.jury-arcade-deck {
+    width: 100%;
+    margin-bottom: 5rem;
 }
 
-.prize-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
+.arcade-character-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 3.5rem;
+    width: 100%;
+}
+
+.arcade-char-card {
+    background: #ffffff;
+    border: 3.5px solid var(--text-navy);
+    border-radius: 28px;
+    padding: 2rem;
+    width: 290px;
+    box-shadow: 10px 10px 0px var(--pink-primary);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.arcade-char-card:nth-child(even) {
+    box-shadow: 10px 10px 0px var(--blue-shadow);
+}
+
+.arcade-char-card:hover {
+    transform: translateY(-10px) rotate(2deg);
+    box-shadow: 14px 14px 0px var(--yellow-star);
+}
+
+.arcade-char-frame {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 3.5px solid var(--text-navy);
+    margin: 0 auto 1.5rem;
+    overflow: hidden;
+    box-shadow: 4px 4px 0px var(--text-navy);
+    background: var(--bg-cream);
+}
+
+.arcade-char-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Subtle CRT gaming monitor grid overlay */
+.arcade-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.08) 3px,
+        rgba(0, 0, 0, 0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+.char-number {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: var(--text-navy);
+    color: #ffffff;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    border: 1.5px solid #ffffff;
+}
+
+.arcade-role-badge {
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--yellow-star);
+    color: var(--text-navy);
+    border: 2px solid var(--text-navy);
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.75rem;
+    box-shadow: 2px 2px 0px var(--text-navy);
+    white-space: nowrap;
+    text-transform: uppercase;
+    z-index: 3;
+}
+
+.char-name {
+    font-family: 'Fredoka One', cursive;
+    color: var(--text-navy);
+    font-size: 1.4rem;
+    margin-bottom: 0.4rem;
+}
+
+.char-title {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    margin-bottom: 1.2rem;
+    min-height: 2.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Console stats styling */
+.char-stats-list {
+    border-top: 2px dashed var(--text-navy);
+    padding-top: 1rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.char-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.stat-label {
+    font-family: 'Fredoka One', cursive;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-navy);
+}
+
+.stat-value.select-ready {
+    color: #10B981; /* Green ready state */
+    font-family: 'Fredoka One', cursive;
+    animation: pulseReady 1.5s infinite;
+}
+
+@keyframes pulseReady {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+
+/* --- ARCADE TICKETS GRID --- */
+.arcade-full-bleed-divider {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top: 3.5px dashed var(--text-navy);
+    margin-top: 3rem;
+    margin-bottom: 4rem;
+}
+
+.prizes-ticket-rack {
+    width: 100%;
+}
+
+.arcade-tickets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2.5rem;
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .arcade-tickets-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+}
+
+.arcade-ticket {
+    position: relative;
+    background: #ffffff;
+    border: 3.5px solid var(--text-navy);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: stretch;
+    box-shadow: 8px 8px 0px var(--text-navy);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+
+/* Perforation punch stubs on top and bottom of ticket */
+.arcade-ticket:before, .arcade-ticket:after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: var(--bg-cream); /* cutout blends with body background */
+    border: 3.5px solid var(--text-navy);
+    border-radius: 50%;
+    left: 80px;
+    z-index: 2;
+}
+
+.arcade-ticket:before {
+    top: -13px;
+}
+
+.arcade-ticket:after {
+    bottom: -13px;
+}
+
+.arcade-ticket:hover {
+    transform: translateY(-5px);
+    box-shadow: 12px 12px 0px var(--yellow-star);
+}
+
+.arcade-ticket.rank-1:hover { box-shadow: 12px 12px 0px var(--yellow-star); }
+.arcade-ticket.rank-2:hover { box-shadow: 12px 12px 0px #CBD5E1; }
+.arcade-ticket.rank-3:hover { box-shadow: 12px 12px 0px #ED8936; }
+.arcade-ticket.rank-innovation:hover { box-shadow: 12px 12px 0px var(--pink-primary); }
+
+.ticket-left {
+    width: 70px;
+    border-right: 3px dashed var(--text-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 1.5rem;
+}
+
+.ticket-rank {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: var(--text-navy);
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+}
+
+.ticket-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.ticket-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.8rem;
+    background: var(--pink-primary);
+    color: #ffffff;
+    border: 2px solid var(--text-navy);
+    border-radius: 8px;
+    padding: 2px 8px;
+    box-shadow: 2px 2px 0px var(--text-navy);
+}
+
+.arcade-ticket.rank-1 .ticket-label { background: var(--yellow-star); color: var(--text-navy); }
+.arcade-ticket.rank-2 .ticket-label { background: #64748B; color: #ffffff; }
+.arcade-ticket.rank-3 .ticket-label { background: #C2410C; color: #ffffff; }
+
+.ticket-serial {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.ticket-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ticket-amount {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 1.6rem;
+    color: var(--pink-primary);
+    background: #fff;
+    border: 2px solid var(--text-navy);
+    border-radius: 12px;
+    padding: 0.2rem 0.8rem;
+    box-shadow: 3px 3px 0px var(--text-navy);
+}
+
+.arcade-ticket.rank-1 .ticket-amount { color: var(--yellow-star); }
+.arcade-ticket.rank-2 .ticket-amount { color: #475569; }
+.arcade-ticket.rank-3 .ticket-amount { color: #C2410C; }
+
+.ticket-details {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: var(--text-navy);
+    font-size: 0.95rem;
+    text-align: right;
+    line-height: 1.3;
 }
 
 /* Hall of Fame */
@@ -6031,3 +6344,175 @@ img {
     transform: translate(0px, 0px);
     box-shadow: 3px 3px 0px var(--text-navy);
 }
+
+/* ==========================================
+   LIVE ANNOUNCEMENT BANNER & HISTORY STYLES
+   ========================================== */
+
+.live-announcement-banner {
+    background: var(--yellow-star);
+    border-bottom: 4px solid var(--text-navy);
+    color: var(--text-navy);
+    padding: 0.75rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1001; /* Higher than header's sticky z-index of 1000 */
+    font-family: 'Outfit', sans-serif;
+    animation: slideDown 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 4px 0px rgba(0, 51, 102, 0.1);
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    overflow: hidden;
+}
+
+.banner-icon {
+    font-size: 1.3rem;
+    animation: megaphoneWiggle 2s infinite ease-in-out;
+    display: inline-block;
+}
+
+.banner-text-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex: 1;
+    flex-wrap: wrap; /* allow wrapping on small devices */
+}
+
+.banner-badge {
+    background: var(--pink-primary);
+    color: #ffffff;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 2px solid var(--text-navy);
+    text-shadow: none;
+    font-weight: 900;
+    letter-spacing: 1px;
+    box-shadow: 2px 2px 0px var(--text-navy);
+    flex-shrink: 0;
+}
+
+.banner-text {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    word-break: break-word;
+    font-family: 'Outfit', sans-serif;
+}
+
+.banner-close-btn {
+    background: var(--bg-cream);
+    border: 2.5px solid var(--text-navy);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-navy);
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-family: 'Fredoka One', cursive;
+    box-shadow: 2px 2px 0px var(--text-navy);
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-left: 1rem;
+    flex-shrink: 0;
+}
+
+.banner-close-btn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px var(--text-navy);
+    background: var(--bg-cream);
+}
+
+/* Announcement History Styles in Admin Card */
+.announcement-history-container {
+    margin-top: 2rem;
+    border-top: 3px dashed var(--text-navy);
+    padding-top: 1.2rem;
+}
+
+.announcement-history-title {
+    font-family: 'Fredoka One', cursive;
+    color: var(--text-navy);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.announcement-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.announcement-history-item {
+    background: var(--bg-cream);
+    border: 3px solid var(--text-navy);
+    border-radius: 16px;
+    padding: 0.8rem 1rem;
+    font-size: 0.85rem;
+    box-shadow: 3px 3px 0px var(--blue-shadow);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.announcement-history-item:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px var(--pink-primary);
+}
+
+.announcement-history-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-bottom: 1.5px dashed rgba(0, 51, 102, 0.15);
+    padding-bottom: 0.3rem;
+}
+
+.announcement-history-admin {
+    font-weight: 800;
+    color: var(--text-navy);
+}
+
+.announcement-history-text {
+    word-break: break-word;
+    color: var(--text-navy);
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes megaphoneWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    10% { transform: rotate(-10deg); }
+    20% { transform: rotate(12deg); }
+    30% { transform: rotate(-10deg); }
+    40% { transform: rotate(8deg); }
+    50% { transform: rotate(0deg); }
+}
+

@@ -37,29 +37,94 @@ const sectionsData = [
     image: "brand/Logo.png"
   },
   {
+    id: 6,
+    type: 'prizes',
+    title: "Judges & Prizes",
+    content: "A total prize pool of over ₹40,000 awaits the most innovative solutions!",
+    image: "icons/trophy.svg"
+  },
+  {
     id: 4,
     type: 'timeline',
     title: "The Roadmap",
     content: "11th July 2026, Saturday 8:00am - 5:00pm and 12th July 2026, Sunday 8:00am - 5:00pm",
     image: "brand/Logo.png"
   },
-
   {
-    id: 6,
-    type: 'prizes',
-    title: "Epic Prizes",
-    content: "A total prize pool of over ₹40,000 awaits the most innovative solutions!",
-    image: "icons/trophy.svg"
+    id: 8,
+    type: 'mentors',
+    title: "Meet Your Mentors",
+    content: "Industry experts ready to guide your journey.",
+    image: "icons/user-profile.svg"
   },
-  { id: 7, type: 'rules', title: "Rules of the Galaxy", content: "Fair play and collaboration are the heart of Starlet.", image: "icons/warning.svg" },
-  { id: 8, type: 'mentors', title: "Meet Your Mentors", content: "Industry experts ready to guide your journey.", image: "icons/user-profile.svg" },
-  { id: 9, type: 'community', title: "Make New Friends", content: "Starlet isn't just an innovation marathon — it's the starting point for lifelong sisterhood and professional networking. Connect with passionate creators, find potential co-founders, share exciting coding breakthroughs, and become part of an empowered tech community that champions your growth!", image: "svg/2.svg" },
-  { id: 17, type: 'events', title: "Highlights & Special Events", content: "Don't miss these amazing sessions, cultural performances, and networking circles scheduled during the hackathon!", image: "brand/Logo.png" },
-  { id: 10, type: 'sponsors', title: "Our Supporters", content: "The organizations making this impact possible.", image: "brand/Logo.png" },
-  { id: 11, type: 'gallery', title: "The Gallery", content: "Captured moments of innovation and fun.", image: "brand/Logo.png" },
-  { id: 12, type: 'faq', title: "Common Doubts", content: "Answers to frequently asked questions.", image: "icons/warning.svg" },
-  // { id: 13, type: 'newsletter', title: "Stay Updated", content: "Join our community to never miss an update.", image: "icons/rocket.svg" },
-  { id: 14, type: 'contact', title: "Get in Touch", content: "Reach out for support or inquiries.", image: "icons/location.svg" }
+  {
+    id: 17,
+    type: 'events',
+    title: "Highlights & Special Events",
+    content: "Don't miss these amazing sessions, cultural performances, and networking circles scheduled during the hackathon!",
+    image: "brand/Logo.png"
+  },
+  {
+    id: 9,
+    type: 'community',
+    title: "Make New Friends",
+    content: "Starlet isn't just an innovation marathon — it's the starting point for lifelong sisterhood and professional networking. Connect with passionate creators, find potential co-founders, share exciting coding breakthroughs, and become part of an empowered tech community that champions your growth!",
+    image: "svg/2.svg"
+  },
+  {
+    id: 10,
+    type: 'sponsors',
+    title: "Our Supporters",
+    content: "The organizations making this impact possible.",
+    image: "brand/Logo.png"
+  },
+  {
+    id: 11,
+    type: 'gallery',
+    title: "The Gallery",
+    content: "Captured moments of innovation and fun.",
+    image: "brand/Logo.png"
+  },
+  {
+    id: 7,
+    type: 'rules',
+    title: "Rules of the Galaxy",
+    content: "Fair play and collaboration are the heart of Starlet.",
+    image: "icons/warning.svg"
+  },
+  {
+    id: 12,
+    type: 'faq',
+    title: "Common Doubts",
+    content: "Answers to frequently asked questions.",
+    image: "icons/warning.svg"
+  },
+  {
+    id: 14,
+    type: 'contact',
+    title: "Get in Touch",
+    content: "Reach out for support or inquiries.",
+    image: "icons/location.svg"
+  }
+];
+
+const judgesData = [
+  {
+    id: 1,
+    name: "Shreya Krishnan",
+    role: "Judge",
+    title: "Managing Director, AnitaB.org",
+    image: "Judge/Shreya Krishnan.jpg",
+    affiliation: "AnitaB.org"
+  },
+  {
+    id: 2,
+    name: "Gayathri Manikutty",
+    role: "Judge",
+    title: "AMMACHI Labs, Amrita Vishwa Vidyapeetham, Amritapuri",
+    image: "Judge/Gayathri Manikutty.png",
+    affiliation: "Amrita University"
+  }
 ];
 
 const tracksData = Array.from({ length: 15 }, (_, i) => ({
@@ -245,6 +310,70 @@ function App() {
     } catch (e) { }
   };
 
+  const playNotificationSound = () => {
+    if (!isSoundEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Tone 1
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+      gain1.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start();
+      osc1.stop(audioCtx.currentTime + 0.15);
+
+      // Tone 2 (delayed slightly)
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.12); // E5
+      gain2.gain.setValueAtTime(0.0, audioCtx.currentTime);
+      gain2.gain.setValueAtTime(0.12, audioCtx.currentTime + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start();
+      osc2.stop(audioCtx.currentTime + 0.35);
+    } catch (e) { }
+  };
+
+  const playIssueAlertSound = () => {
+    if (!isSoundEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Tone 1: retro/triangle wave beep
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+      gain1.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start();
+      osc1.stop(audioCtx.currentTime + 0.1);
+
+      // Tone 2: lower retro/triangle wave beep, delayed
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(349.23, audioCtx.currentTime + 0.15); // F4
+      gain2.gain.setValueAtTime(0.0, audioCtx.currentTime);
+      gain2.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start();
+      osc2.stop(audioCtx.currentTime + 0.25);
+    } catch (e) { }
+  };
+
   const handleContactSubmit = (e) => {
     e.preventDefault();
     try {
@@ -277,6 +406,37 @@ function App() {
     event_announcement: '',
     google_drive_link: ''
   });
+  const [announcementHistory, setAnnouncementHistory] = useState([]);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(true);
+  const prevAnnouncementRef = useRef('');
+
+  useEffect(() => {
+    if (settings.event_announcement) {
+      const dismissed = localStorage.getItem('dismissed_announcement');
+      const isNew = prevAnnouncementRef.current !== settings.event_announcement;
+      
+      prevAnnouncementRef.current = settings.event_announcement;
+
+      const isDismissed = dismissed === settings.event_announcement;
+      setIsBannerDismissed(isDismissed);
+
+      if (isNew && !isDismissed) {
+        playNotificationSound();
+      }
+    } else {
+      setIsBannerDismissed(true);
+      prevAnnouncementRef.current = '';
+    }
+  }, [settings.event_announcement]);
+
+  const [announcementInput, setAnnouncementInput] = useState('');
+
+  useEffect(() => {
+    if (settings.event_announcement !== undefined) {
+      setAnnouncementInput(settings.event_announcement || '');
+    }
+  }, [settings.event_announcement]);
+
   const [auditLogs, setAuditLogs] = useState([]);
   const [expandedTeam, setExpandedTeam] = useState(null);
   const [submissionsFilter, setSubmissionsFilter] = useState('all'); // all, team
@@ -762,9 +922,14 @@ function App() {
               .single();
 
             setActiveAlert({
-              ...payload.new,
+              id: payload.new.id,
+              type: 'mentor_request',
+              message: payload.new.message,
               attendee: richData
             });
+
+            playIssueAlertSound();
+
             if (!payload.new.status || payload.new.status === 'pending') {
               setMentorRequests(prev => [payload.new, ...prev]);
             }
@@ -787,6 +952,31 @@ function App() {
         })
         .subscribe();
       channels.push(adminChannel);
+
+      // Realtime listener for new system issues
+      const issuesChannel = supabase.channel('admin-issues-updates')
+        .on('postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'system_issues' },
+          async (payload) => {
+            const { data: richData } = await supabase
+              .from('profiles')
+              .select('full_name, avatar_url, team_name')
+              .eq('id', payload.new.user_id)
+              .single();
+            
+            setActiveAlert({
+              id: payload.new.id,
+              type: 'system_issue',
+              message: payload.new.description,
+              attendee: richData
+            });
+
+            playIssueAlertSound();
+            fetchAllUsers();
+          }
+        )
+        .subscribe();
+      channels.push(issuesChannel);
     }
 
     return () => {
@@ -847,6 +1037,23 @@ function App() {
     return teamName;
   };
 
+  const fetchAnnouncementHistory = async () => {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*, profiles(full_name)')
+      .eq('action', 'Updated Setting: event_announcement')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) {
+      setAnnouncementHistory(data);
+    }
+  };
+
+  const dismissBanner = () => {
+    localStorage.setItem('dismissed_announcement', settings.event_announcement || '');
+    setIsBannerDismissed(true);
+  };
+
   const fetchSettings = async () => {
     const { data } = await supabase.from('event_settings').select('*');
     if (data) {
@@ -854,6 +1061,7 @@ function App() {
       data.forEach(s => settingsMap[s.id] = s.value);
       setSettings(settingsMap);
     }
+    fetchAnnouncementHistory();
   };
 
   const fetchAuditLogs = async () => {
@@ -872,6 +1080,41 @@ function App() {
       details
     }]);
     fetchAuditLogs();
+  };
+
+  const formatLogDetails = (log) => {
+    if (!log.details || typeof log.details !== 'object') {
+      return String(log.details || '');
+    }
+    
+    if (log.action.startsWith('Updated Setting:')) {
+      const settingKey = log.action.split('Updated Setting: ')[1];
+      return `Set "${settingKey}" to: "${log.details.value}"`;
+    }
+    
+    if (log.action === 'Approved Mentor') {
+      return `Mentor Name: ${log.details.name}`;
+    }
+    
+    if (log.action === 'Added Venue') {
+      return `Venue Name: ${log.details.name} (Images: ${log.details.images || 0})`;
+    }
+    
+    if (log.action === 'Added Mentor') {
+      return `Mentor Name: ${log.details.name}`;
+    }
+    
+    if (log.action === 'Deleted Mentor') {
+      return `Mentor Name: ${log.details.name}`;
+    }
+    
+    if (log.action === 'Deleted User') {
+      return `User Name: ${log.details.name} (ID: ${log.details.userId})`;
+    }
+
+    return Object.entries(log.details)
+      .map(([key, val]) => `${key}: ${val}`)
+      .join(', ');
   };
 
   const updateSetting = async (key, value) => {
@@ -2138,6 +2381,22 @@ function App() {
         </div>
       )}
 
+      {/* Live Announcement Banner */}
+      {settings.event_announcement && !isBannerDismissed && (
+        <div className="live-announcement-banner">
+          <div className="banner-content">
+            <span className="banner-icon">📢</span>
+            <div className="banner-text-wrapper">
+              <span className="banner-badge">ANNOUNCEMENT</span>
+              <span className="banner-text">{settings.event_announcement}</span>
+            </div>
+          </div>
+          <button className="banner-close-btn" onClick={dismissBanner} aria-label="Dismiss announcement">
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Floating Sparkles */}
       <div className="sparkle s1">✦</div>
       <div className="sparkle s2">✧</div>
@@ -2757,33 +3016,109 @@ function App() {
                     </div>
                   ) : section.type === 'prizes' ? (
                     <div className="section-content">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1.5rem' }}>
-                        <h2 className="text-3d" style={{ fontSize: '2.5rem', margin: 0 }}>{section.title}</h2>
-                        <div className="mobile-scroll-btns" style={{ display: 'flex', gap: '1rem' }}>
-                          <button className="nav-btn-round" onClick={() => prizesRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}>←</button>
-                          <button className="nav-btn-round" onClick={() => prizesRef.current?.scrollBy({ left: 300, behavior: 'smooth' })}>→</button>
+                      <h2 className="text-3d" style={{ fontSize: '2.5rem', marginBottom: '3rem', textAlign: 'center' }}>{section.title}</h2>
+                      
+                      {/* Jury Showcase (Top) */}
+                      <div className="jury-arcade-deck">
+                        <h3 className="arcade-subtitle">👾 JURY SELECTION GRID 👾</h3>
+                        <div className="arcade-character-grid">
+                          {judgesData.map((judge, index) => (
+                            <div key={judge.id} className="arcade-char-card">
+                              <div className="arcade-char-frame">
+                                <img src={judge.image} alt={judge.name} className="arcade-char-img" />
+                                <div className="arcade-scanline"></div>
+                                <div className="char-number">P{index + 1}</div>
+                                <div className="arcade-role-badge">{judge.role}</div>
+                              </div>
+                              <div className="arcade-char-stats">
+                                <h4 className="char-name">{judge.name}</h4>
+                                <p className="char-title">{judge.title}</p>
+                                <div className="char-stats-list">
+                                  <div className="char-stat-item">
+                                    <span className="stat-label">AFFILIATION:</span>
+                                    <span className="stat-value">{judge.affiliation}</span>
+                                  </div>
+                                  <div className="char-stat-item">
+                                    <span className="stat-label">STATUS:</span>
+                                    <span className="stat-value select-ready">▶ READY</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <div className="prize-grid" ref={prizesRef}>
-                        <div className="prize-card">
-                          <div className="prize-icon"><img src="icons/trophy.svg" style={{ width: '80px' }} alt="trophy" /></div>
-                          <h3 className="text-3d" style={{ fontSize: '1.5rem' }}>1st Prize</h3>
-                          <p>₹15,000</p>
-                        </div>
-                        <div className="prize-card">
-                          <div className="prize-icon"><img src="icons/trophy.svg" style={{ width: '70px', opacity: 0.7 }} alt="trophy" /></div>
-                          <h3 className="text-3d" style={{ fontSize: '1.5rem' }}>2nd Prize</h3>
-                          <p>₹10,000</p>
-                        </div>
-                        <div className="prize-card">
-                          <div className="prize-icon"><img src="icons/trophy.svg" style={{ width: '60px', opacity: 0.5 }} alt="trophy" /></div>
-                          <h3 className="text-3d" style={{ fontSize: '1.5rem' }}>3rd Prize</h3>
-                          <p>₹7,500</p>
-                        </div>
-                        <div className="prize-card">
-                          <div className="prize-icon"><img src="icons/laptop.svg" style={{ width: '60px', opacity: 0.8 }} alt="innovation" /></div>
-                          <h3 className="text-3d" style={{ fontSize: '1.5rem' }}>Best Innovation</h3>
-                          <p>₹7,500</p>
+
+                      {/* Full Screen dashed divider */}
+                      <div className="arcade-full-bleed-divider"></div>
+
+                      {/* Prizes Showcase (Bottom) */}
+                      <div className="prizes-ticket-rack">
+                        <h3 className="arcade-subtitle">🎫 CLAIM ARCADE PRIZE TICKETS 🎫</h3>
+                        <div className="arcade-tickets-grid">
+                          <div className="arcade-ticket rank-1">
+                            <div className="ticket-left">
+                              <div className="ticket-rank">01</div>
+                            </div>
+                            <div className="ticket-right">
+                              <div className="ticket-header">
+                                <span className="ticket-label">GOLD TICKET</span>
+                                <span className="ticket-serial">ST-2026-01</span>
+                              </div>
+                              <div className="ticket-body">
+                                <div className="ticket-amount">₹15,000</div>
+                                <div className="ticket-details">First Place Trophy + Certificate</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="arcade-ticket rank-2">
+                            <div className="ticket-left">
+                              <div className="ticket-rank">02</div>
+                            </div>
+                            <div className="ticket-right">
+                              <div className="ticket-header">
+                                <span className="ticket-label">SILVER TICKET</span>
+                                <span className="ticket-serial">ST-2026-02</span>
+                              </div>
+                              <div className="ticket-body">
+                                <div className="ticket-amount">₹10,000</div>
+                                <div className="ticket-details">Second Place Trophy + Certificate</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="arcade-ticket rank-3">
+                            <div className="ticket-left">
+                              <div className="ticket-rank">03</div>
+                            </div>
+                            <div className="ticket-right">
+                              <div className="ticket-header">
+                                <span className="ticket-label">BRONZE TICKET</span>
+                                <span className="ticket-serial">ST-2026-03</span>
+                              </div>
+                              <div className="ticket-body">
+                                <div className="ticket-amount">₹7,500</div>
+                                <div className="ticket-details">Third Place Trophy + Certificate</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="arcade-ticket rank-innovation">
+                            <div className="ticket-left">
+                              <div className="ticket-rank">💡</div>
+                            </div>
+                            <div className="ticket-right">
+                              <div className="ticket-header">
+                                <span className="ticket-label">COSMIC TICKET</span>
+                                <span className="ticket-serial">ST-2026-IN</span>
+                              </div>
+                              <div className="ticket-body">
+                                <div className="ticket-amount">₹7,500</div>
+                                <div className="ticket-details">Best Innovation Special Award</div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3355,17 +3690,47 @@ function App() {
                     <div style={{ marginTop: '1rem' }}>
                       <textarea
                         style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                        value={settings.event_announcement || ''}
-                        onChange={(e) => setSettings({ ...settings, event_announcement: e.target.value })}
+                        value={announcementInput}
+                        onChange={(e) => setAnnouncementInput(e.target.value)}
                         placeholder="Type a message for the landing page banner..."
                       />
                       <button
                         className="join-btn"
                         style={{ width: '100%', marginTop: '1rem' }}
-                        onClick={() => updateSetting('event_announcement', settings.event_announcement)}
+                        onClick={() => updateSetting('event_announcement', announcementInput)}
                       >
                         UPDATE LIVE BANNER
                       </button>
+                    </div>
+
+                    {/* Announcement History Section */}
+                    <div className="announcement-history-container">
+                      <h4 className="announcement-history-title">
+                        <span>⏳</span> Announcement History
+                      </h4>
+                      {announcementHistory.length === 0 ? (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', margin: '1rem 0' }}>
+                          No past announcements recorded yet.
+                        </p>
+                      ) : (
+                        <div className="announcement-history-list">
+                          {announcementHistory.map((log) => (
+                            <div key={log.id} className="announcement-history-item">
+                              <div className="announcement-history-meta">
+                                <span className="announcement-history-admin">
+                                  👤 {log.profiles?.full_name || 'Admin'}
+                                </span>
+                                <span>
+                                  {new Date(log.created_at).toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="announcement-history-text">
+                                {log.details?.value || ''}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="admin-card">
@@ -5164,7 +5529,7 @@ function App() {
                         <td><small>{new Date(log.created_at).toLocaleString()}</small></td>
                         <td><strong>{log.profiles?.full_name || 'System / Anonymous'}</strong></td>
                         <td><span className="role-badge" style={{ background: '#eee', color: '#333' }}>{log.action}</span></td>
-                        <td><span style={{ fontSize: '0.85rem' }}>{typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}</span></td>
+                        <td><span style={{ fontSize: '0.85rem' }}>{formatLogDetails(log)}</span></td>
                       </tr>
                     ));
                   })()}
@@ -5673,24 +6038,34 @@ function App() {
       {activeAlert && (
         <div className="realtime-alert-overlay">
           <div className="realtime-alert-card">
-            <div className="alert-header">NEW HELP REQUEST</div>
+            <div className="alert-header">
+              {activeAlert.type === 'system_issue' ? 'NEW SYSTEM ISSUE' : 'NEW HELP REQUEST'}
+            </div>
             <div className="alert-body">
               <div className="alert-user-photo">
-                <img src={activeAlert.attendee?.avatar_url || 'icons/user-profile.svg'} alt="attendee" />
+                <img src={activeAlert.attendee?.avatar_url || 'icons/user-profile.svg'} alt="user" />
               </div>
               <div className="alert-content">
-                <h3>{activeAlert.attendee?.full_name}</h3>
+                <h3>{activeAlert.attendee?.full_name || 'Attendee'}</h3>
                 <span className="alert-team-tag">{activeAlert.attendee?.team_name || 'Solo Hacker'}</span>
                 <p>"{activeAlert.message}"</p>
               </div>
             </div>
             <div className="alert-footer">
-              <button className="join-btn" style={{ width: '100%', marginBottom: '0.5rem' }} onClick={() => { handleAcceptRequest(activeAlert.id); setActiveAlert(null); }}>
-                ACCEPT NOW
-              </button>
-              <button className="btn-secondary" style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '2px solid #eee', cursor: 'pointer' }} onClick={() => setActiveAlert(null)}>
-                DISMISS
-              </button>
+              {activeAlert.type === 'system_issue' ? (
+                <button className="join-btn" style={{ width: '100%' }} onClick={() => setActiveAlert(null)}>
+                  ACKNOWLEDGE
+                </button>
+              ) : (
+                <>
+                  <button className="join-btn" style={{ width: '100%', marginBottom: '0.5rem' }} onClick={() => { handleAcceptRequest(activeAlert.id); setActiveAlert(null); }}>
+                    ACCEPT NOW
+                  </button>
+                  <button className="btn-secondary" style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '2px solid #eee', cursor: 'pointer' }} onClick={() => setActiveAlert(null)}>
+                    DISMISS
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
