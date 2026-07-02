@@ -530,11 +530,12 @@ function App() {
   const showSystemNotification = (title, body, tag = 'starlet-notification') => {
     if (a11ySettings.systemNotifications && 'Notification' in window && Notification.permission === 'granted') {
       const faviconUrl = window.location.origin + '/brand/favicon.png';
+      const iconUrl = window.location.origin + '/brand/pwa-icon-192.png';
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification(title, {
             body: body,
-            icon: faviconUrl,
+            icon: iconUrl,
             badge: faviconUrl,
             vibrate: [200, 100, 200],
             tag: tag,
@@ -544,13 +545,13 @@ function App() {
           console.error('Service Worker ready failed:', err);
           new Notification(title, {
             body: body,
-            icon: faviconUrl
+            icon: iconUrl
           });
         });
       } else {
         new Notification(title, {
           body: body,
-          icon: faviconUrl
+          icon: iconUrl
         });
       }
     }
@@ -677,7 +678,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // 30 seconds background refresh interval
+    // 5 seconds background refresh interval
     const intervalId = setInterval(() => {
       fetchSettings();
       if (isLoggedIn) {
@@ -688,7 +689,7 @@ function App() {
           fetchAllUsers(); // Also fetches system_issues
         }
       }
-    }, 30000);
+    }, 5000);
 
     return () => clearInterval(intervalId);
   }, [isLoggedIn, user?.role, adminActiveTab, session?.user?.id]);
@@ -3196,23 +3197,33 @@ function App() {
                         }
 
                         if (isMobile) {
-                          const track = allTracks[mobileTrackPageIndex];
-                          if (!track) return null;
+                          const PAGE_SIZE = 3;
+                          const numPages = Math.ceil(allTracks.length / PAGE_SIZE);
+                          const startIndex = mobileTrackPageIndex * PAGE_SIZE;
+                          const pageTracks = allTracks.slice(startIndex, startIndex + PAGE_SIZE);
+                          
+                          if (pageTracks.length === 0) return null;
+                          
                           return (
                             <>
-                              <div className="tracks-grid-interactive paginated-mobile-container" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                                <div 
-                                  key={mobileTrackPageIndex} 
-                                  className={`track-card-mini paginated-active-card slide-${slideDirection}`} 
-                                  onClick={() => setSelectedTrack({ ...track, index: track.id === 'other' ? 'Other' : mobileTrackPageIndex + 1 })}
-                                  style={{ width: '100%', maxWidth: '340px', margin: '0 auto' }}
-                                >
-                                  <div className="track-card-inner">
-                                    <span className="track-number">{track.id === 'other' ? '★' : `#${mobileTrackPageIndex + 1}`}</span>
-                                    <h3>{track.title}</h3>
-                                    <div className="view-details-tag">VIEW CHALLENGE →</div>
-                                  </div>
-                                </div>
+                              <div className="tracks-grid-interactive paginated-mobile-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', width: '100%' }}>
+                                {pageTracks.map((track) => {
+                                  const absoluteIndex = allTracks.indexOf(track);
+                                  return (
+                                    <div 
+                                      key={track.id} 
+                                      className={`track-card-mini paginated-active-card slide-${slideDirection}`} 
+                                      onClick={() => setSelectedTrack({ ...track, index: track.id === 'other' ? 'Other' : absoluteIndex + 1 })}
+                                      style={{ width: '100%', margin: '0 auto' }}
+                                    >
+                                      <div className="track-card-inner">
+                                        <span className="track-number">{track.id === 'other' ? '★' : `#${absoluteIndex + 1}`}</span>
+                                        <h3>{track.title}</h3>
+                                        <div className="view-details-tag">VIEW CHALLENGE →</div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
 
                               <div className="track-pagination-controls">
@@ -3225,12 +3236,12 @@ function App() {
                                     }
                                   }}
                                   disabled={mobileTrackPageIndex === 0}
-                                  aria-label="Previous Track"
+                                  aria-label="Previous Page"
                                 >
                                   ←
                                 </button>
                                 <div className="track-pagination-numbers">
-                                  {allTracks.map((_, idx) => (
+                                  {Array.from({ length: numPages }).map((_, idx) => (
                                     <button
                                       key={idx}
                                       className={`track-pagination-number ${mobileTrackPageIndex === idx ? 'active' : ''}`}
@@ -3239,20 +3250,20 @@ function App() {
                                         setMobileTrackPageIndex(idx);
                                       }}
                                     >
-                                      {idx === allTracks.length - 1 ? '★' : idx + 1}
+                                      {idx + 1}
                                     </button>
                                   ))}
                                 </div>
                                 <button 
                                   className="track-pagination-arrow"
                                   onClick={() => {
-                                    if (mobileTrackPageIndex < allTracks.length - 1) {
+                                    if (mobileTrackPageIndex < numPages - 1) {
                                       setSlideDirection('next');
                                       setMobileTrackPageIndex(prev => prev + 1);
                                     }
                                   }}
-                                  disabled={mobileTrackPageIndex === allTracks.length - 1}
-                                  aria-label="Next Track"
+                                  disabled={mobileTrackPageIndex === numPages - 1}
+                                  aria-label="Next Page"
                                 >
                                   →
                                 </button>
