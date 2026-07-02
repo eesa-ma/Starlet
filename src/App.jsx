@@ -748,6 +748,25 @@ function App() {
           }
         });
       }
+
+      // Request camera + microphone permission proactively when running as PWA
+      // This triggers the OS system permission dialog so it doesn't surprise the user mid-upload
+      if (isStandalone && navigator.mediaDevices && navigator.permissions) {
+        navigator.permissions.query({ name: 'camera' }).then((result) => {
+          if (result.state === 'prompt') {
+            // Briefly open and immediately close the stream to trigger the OS permission dialog
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+              .then((stream) => {
+                stream.getTracks().forEach((track) => track.stop());
+              })
+              .catch(() => {
+                // User denied or hardware unavailable – silently ignore
+              });
+          }
+        }).catch(() => {
+          // Permissions API not supported – silently ignore
+        });
+      }
     }
 
     // Pre-warm Speech Synthesis voices for mobile/PWA TTS compatibility
