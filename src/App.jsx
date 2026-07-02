@@ -2982,7 +2982,20 @@ function App() {
 
       {uploadAlert && (
         <div className={`blog-alert-popup ${uploadAlert.type}`}>
-          <span className="alert-icon">{uploadAlert.type === 'success' ? '🎉' : '❌'}</span>
+          <span className="alert-icon" style={{ display: 'flex', alignItems: 'center' }}>
+            {uploadAlert.type === 'success' ? (
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="#0d9488" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="#e11d48" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            )}
+          </span>
           <span className="alert-message">{uploadAlert.message}</span>
           <button className="alert-close-btn" onClick={() => setUploadAlert(null)}>×</button>
         </div>
@@ -6340,28 +6353,27 @@ function App() {
         <SponsorsPage onBack={() => setActiveView('landing')} />
       ) : activeView === 'blog' ? (
         <div className="blog-feed-container" style={{ paddingTop: '100px' }}>
-          <div className="blog-header-row">
-            <div>
-              <h1 className="text-3d" style={{ fontSize: '3.5rem' }}>Starlet Blog Feed</h1>
-              <p className="handwritten" style={{ fontSize: '1.2rem' }}>Catch the latest vibes and vlogs from Starlet 5.0!</p>
-            </div>
-            {isLoggedIn && (
-              <button 
-                className="join-btn upload-vlog-btn"
-                onClick={() => setIsUploadModalOpen(true)}
-                style={{ background: 'var(--yellow-star)', color: 'var(--text-navy)' }}
-              >
-                🎥 SHARE A VLOG / PHOTO
-              </button>
-            )}
-          </div>
+          {isLoggedIn && (
+            <button 
+              className="floating-add-post-btn"
+              onClick={() => setIsUploadModalOpen(true)}
+              title="Share a vlog or photo"
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          )}
 
           <div className="blog-posts-feed">
             {blogPosts.length === 0 ? (
               <div className="empty-blog-placeholder">
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✨</div>
-                <h2>The feed is empty!</h2>
-                <p>Be the first one to post a highlight from the event!</p>
+                <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="var(--yellow-star)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}>
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <h2>No Posts Yet</h2>
+                <p>Be the first one to share a highlight from the event!</p>
               </div>
             ) : (
               <div className="blog-posts-list">
@@ -6385,7 +6397,12 @@ function App() {
                       {/* Delete option for Owner or Admin */}
                       {(session?.user?.id && (post.user_id === session.user.id || user.role === 'admin')) && (
                         <button className="blog-delete-btn" onClick={() => handleDeletePost(post.id)} title="Delete Post">
-                          🗑️
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                          </svg>
                         </button>
                       )}
                     </div>
@@ -6411,7 +6428,9 @@ function App() {
                           className={`blog-star-btn ${post.isStarred ? 'starred' : ''}`}
                           onClick={() => handleStarToggle(post.id)}
                         >
-                          ⭐
+                          <svg className="star-icon-svg" viewBox="0 0 24 24" width="26" height="26" fill={post.isStarred ? "var(--yellow-star)" : "none"} stroke="var(--text-navy)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                          </svg>
                         </button>
                         <span className="blog-star-count">
                           <strong>{post.starCount}</strong> {post.starCount === 1 ? 'star' : 'stars'}
@@ -6420,7 +6439,7 @@ function App() {
                       {post.caption && (
                         <div className="blog-post-caption">
                           <strong onClick={() => handleViewUserProfile(post.user_id)} style={{ cursor: 'pointer', marginRight: '8px' }}>
-                            {post.profiles?.full_name || 'Anonymous User'}:
+                            {post.profiles?.full_name || 'Anonymous User'}
                           </strong>
                           <span>{post.caption}</span>
                         </div>
@@ -6458,14 +6477,14 @@ function App() {
                         className={uploadFileType === 'image' ? 'active' : ''} 
                         onClick={() => { setUploadFileType('image'); setUploadFile(null); }}
                       >
-                        📷 PHOTO
+                        PHOTO
                       </button>
                       <button 
                         type="button" 
                         className={uploadFileType === 'video' ? 'active' : ''} 
                         onClick={() => { setUploadFileType('video'); setUploadFile(null); }}
                       >
-                        🎥 VIDEO
+                        VIDEO
                       </button>
                     </div>
                   </div>
@@ -6478,14 +6497,14 @@ function App() {
                         className={sourceMode === 'gallery' ? 'active' : ''} 
                         onClick={() => { setSourceMode('gallery'); setUploadFile(null); }}
                       >
-                        📂 GALLERY
+                        GALLERY
                       </button>
                       <button 
                         type="button" 
                         className={sourceMode === 'camera' ? 'active' : ''} 
                         onClick={() => { setSourceMode('camera'); setUploadFile(null); }}
                       >
-                        📸 LIVE CAMERA
+                        LIVE CAMERA
                       </button>
                     </div>
                   </div>
@@ -6505,7 +6524,18 @@ function App() {
                         style={{ display: 'none' }}
                       />
                       <label htmlFor="blog-media-file" className="blog-file-label">
-                        <span className="file-icon">{sourceMode === 'camera' ? '📷' : '📂'}</span>
+                        <span className="file-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                          {sourceMode === 'camera' ? (
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                              <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                          )}
+                        </span>
                         <span className="file-text">
                           {uploadFile ? uploadFile.name : sourceMode === 'camera' ? `Tap to open camera to record/take ${uploadFileType}...` : `Click to select ${uploadFileType}...`}
                         </span>
