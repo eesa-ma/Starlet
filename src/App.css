@@ -69,8 +69,10 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 5%;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    width: 100%;
     background: rgba(255, 253, 240, 0.9);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
@@ -5186,12 +5188,14 @@ html.menu-open {
     }
     
     .partners-grid-custom::-webkit-scrollbar {
-        height: 6px;
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
     }
     
-    .partners-grid-custom::-webkit-scrollbar-thumb {
-        background: var(--pink-primary);
-        border-radius: 4px;
+    .partners-grid-custom {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
     
     .partners-grid-custom .partner-card-square {
@@ -5476,18 +5480,15 @@ html.menu-open {
     gap: 2.5rem;
     overflow-x: auto;
     padding: 1.5rem 1rem;
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-gold) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
 }
 
 .sponsors-testimonials-slider::-webkit-scrollbar {
-    height: 6px;
-}
-
-.sponsors-testimonials-slider::-webkit-scrollbar-thumb {
-    background: var(--accent-gold);
-    border-radius: 4px;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .sponsors-testimonial-card {
@@ -7305,6 +7306,163 @@ input:checked + .a11y-slider:before {
     }
     100% {
         box-shadow: 0 0 15px rgba(255, 0, 127, 0.8);
+    }
+}
+
+/* Custom Overrides for Fixed Navbar Height and A11y Scaling on Mobile */
+@media (max-width: 768px) {
+    header {
+        padding: 0.75rem 4% !important;
+    }
+
+    .a11y-widget-container {
+        bottom: 20px !important;
+        left: 20px !important;
+    }
+
+    .a11y-widget-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.4rem !important;
+        box-shadow: 3px 3px 0px var(--text-navy) !important;
+    }
+
+    .a11y-widget-btn svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .a11y-widget-panel {
+        bottom: 65px !important;
+        left: 0 !important;
+        width: 290px !important;
+    }
+
+    .scroll-top-btn {
+        bottom: 20px !important;
+        right: 20px !important;
+        width: 50px !important;
+        height: 50px !important;
+        box-shadow: 3px 3px 0px var(--text-navy) !important;
+    }
+
+    .scroll-top-btn img {
+        width: 25px !important;
+        height: 25px !important;
+    }
+}
+
+/* Custom mobile track pagination controls & animations */
+.track-pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    width: 100%;
+}
+
+.track-pagination-arrow {
+    background: #fff;
+    border: 3.5px solid var(--text-navy);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-family: 'Fredoka One', cursive;
+    color: var(--text-navy);
+    box-shadow: 4px 4px 0px var(--text-navy);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.track-pagination-arrow:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: 0px 0px 0px var(--text-navy) !important;
+    transform: translate(4px, 4px);
+}
+
+.track-pagination-arrow:not(:disabled):hover {
+    background: var(--yellow-star);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--text-navy);
+}
+
+.track-pagination-arrow:not(:disabled):active {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px var(--text-navy);
+}
+
+.track-pagination-numbers {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.track-pagination-number {
+    background: #fff;
+    border: 3px solid var(--text-navy);
+    border-radius: 10px;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    color: var(--text-navy);
+    box-shadow: 3px 3px 0px var(--text-navy);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.track-pagination-number.active {
+    background: var(--pink-primary);
+    color: #fff;
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px var(--text-navy) !important;
+}
+
+.track-pagination-number:hover {
+    background: var(--yellow-star);
+    color: var(--text-navy);
+}
+
+/* Pagination animations */
+.paginated-active-card.slide-next {
+    animation: trackSlideNext 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+}
+
+.paginated-active-card.slide-prev {
+    animation: trackSlidePrev 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+}
+
+@keyframes trackSlideNext {
+    0% {
+        opacity: 0;
+        transform: translateX(40px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes trackSlidePrev {
+    0% {
+        opacity: 0;
+        transform: translateX(-40px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
     }
 }
 

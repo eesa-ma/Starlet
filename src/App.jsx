@@ -289,10 +289,18 @@ function App() {
   const [isA11yOpen, setIsA11yOpen] = useState(false);
   const a11yRef = useRef(null);
   const [a11ySettings, setA11ySettings] = useState(() => {
+    let hasSystemNotificationPermission = false;
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      hasSystemNotificationPermission = Notification.permission === 'granted';
+    }
     try {
       const saved = localStorage.getItem('starlet_a11y_settings');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (hasSystemNotificationPermission) {
+          parsed.systemNotifications = true;
+        }
+        return parsed;
       }
     } catch (e) {
       console.warn('Failed to parse a11y settings', e);
@@ -308,7 +316,7 @@ function App() {
       muteSound: false,
       readingMask: false,
       textToSpeech: false,
-      systemNotifications: false
+      systemNotifications: hasSystemNotificationPermission
     };
   });
 
@@ -519,6 +527,35 @@ function App() {
     } catch (e) { }
   };
 
+  const showSystemNotification = (title, body, tag = 'starlet-notification') => {
+    if (a11ySettings.systemNotifications && 'Notification' in window && Notification.permission === 'granted') {
+      const faviconUrl = window.location.origin + '/brand/favicon.png';
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(title, {
+            body: body,
+            icon: faviconUrl,
+            badge: faviconUrl,
+            vibrate: [200, 100, 200],
+            tag: tag,
+            renotify: true
+          });
+        }).catch((err) => {
+          console.error('Service Worker ready failed:', err);
+          new Notification(title, {
+            body: body,
+            icon: faviconUrl
+          });
+        });
+      } else {
+        new Notification(title, {
+          body: body,
+          icon: faviconUrl
+        });
+      }
+    }
+  };
+
   const playIssueAlertSound = () => {
     if (!isSoundEnabled || a11ySettings.muteSound) return;
     try {
@@ -599,33 +636,7 @@ function App() {
 
       if (isNew && !isDismissed) {
         playNotificationSound();
-
-        // Trigger system / push notification on phone/desktop OS notification bar
-        if (a11ySettings.systemNotifications && 'Notification' in window && Notification.permission === 'granted') {
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then((registration) => {
-              registration.showNotification('Starlet 5.0 Announcement', {
-                body: settings.event_announcement,
-                icon: '/brand/pwa-icon-192.png',
-                badge: '/brand/favicon.png',
-                vibrate: [200, 100, 200],
-                tag: 'starlet-announcement',
-                renotify: true
-              });
-            }).catch((err) => {
-              console.error('Service Worker ready failed:', err);
-              new Notification('Starlet 5.0 Announcement', {
-                body: settings.event_announcement,
-                icon: '/brand/pwa-icon-192.png'
-              });
-            });
-          } else {
-            new Notification('Starlet 5.0 Announcement', {
-              body: settings.event_announcement,
-              icon: '/brand/pwa-icon-192.png'
-            });
-          }
-        }
+        showSystemNotification('Starlet 5.0 Announcement', settings.event_announcement, 'starlet-announcement');
       }
     } else {
       setIsBannerDismissed(true);
@@ -636,6 +647,14 @@ function App() {
   useEffect(() => {
     // Request notification permission if running as a standalone app and permission is default
     if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setA11ySettings((prev) => {
+          if (!prev.systemNotifications) {
+            return { ...prev, systemNotifications: true };
+          }
+          return prev;
+        });
+      }
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
       if (isStandalone && Notification.permission === 'default') {
         Notification.requestPermission().then((permission) => {
@@ -656,6 +675,23 @@ function App() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    // 30 seconds background refresh interval
+    const intervalId = setInterval(() => {
+      fetchSettings();
+      if (isLoggedIn) {
+        if (user.role === 'mentor' || (user.role === 'admin' && adminActiveTab === 'mentor')) {
+          fetchMentorRequests();
+        }
+        if (user.role === 'admin') {
+          fetchAllUsers(); // Also fetches system_issues
+        }
+      }
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [isLoggedIn, user?.role, adminActiveTab, session?.user?.id]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -700,6 +736,8 @@ function App() {
   const [mentors, setMentors] = useState([]);
   const [problemStatements, setProblemStatements] = useState([]);
   const [visibleLandingTracksCount, setVisibleLandingTracksCount] = useState(3);
+  const [mobileTrackPageIndex, setMobileTrackPageIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState('next');
   const [problemStatementsPage, setProblemStatementsPage] = useState(1);
   const [activeMentorsPage, setActiveMentorsPage] = useState(1);
   const [pendingMentorsPage, setPendingMentorsPage] = useState(1);
@@ -1186,6 +1224,13 @@ function App() {
 
             playIssueAlertSound();
 
+            const attendeeName = richData?.full_name || 'An attendee';
+            showSystemNotification(
+              'New Mentor Help Request',
+              `${attendeeName} requested help: "${payload.new.message}"`,
+              `mentor-request-${payload.new.id}`
+            );
+
             if (!payload.new.status || payload.new.status === 'pending') {
               setMentorRequests(prev => [payload.new, ...prev]);
             }
@@ -1228,6 +1273,14 @@ function App() {
             });
 
             playIssueAlertSound();
+
+            const attendeeName = richData?.full_name || 'An attendee';
+            showSystemNotification(
+              'New System Issue Reported',
+              `${attendeeName} reported: "${payload.new.description}"`,
+              `system-issue-${payload.new.id}`
+            );
+
             fetchAllUsers();
           }
         )
@@ -1381,6 +1434,11 @@ function App() {
     if (!error) {
       logAction(`Updated Setting: ${key}`, { value });
       fetchSettings();
+      if (key === 'google_drive_link') {
+        await supabase
+          .from('event_settings')
+          .upsert({ id: 'event_announcement', value: `Submission Google Drive Link has been updated! Access it here: ${value}` });
+      }
     }
   };
 
@@ -2681,7 +2739,7 @@ function App() {
           <div className="logo-circle" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
             <img src="brand/Logo.png" alt="Starlet Logo" />
           </div>
-          {(activeView === 'profile' || activeView === 'sponsors-overview' || activeView === 'audit-logs') && (
+          {(activeView === 'profile' || activeView === 'sponsors-overview' || activeView === 'audit-logs' || isMobile) && (
             <span className="logo-text-starlet" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
               Starlet
             </span>
@@ -3137,14 +3195,76 @@ function App() {
                           );
                         }
 
-                        const displayedTracks = isMobile
-                          ? allTracks.slice(0, visibleLandingTracksCount)
-                          : allTracks;
+                        if (isMobile) {
+                          const track = allTracks[mobileTrackPageIndex];
+                          if (!track) return null;
+                          return (
+                            <>
+                              <div className="tracks-grid-interactive paginated-mobile-container" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                                <div 
+                                  key={mobileTrackPageIndex} 
+                                  className={`track-card-mini paginated-active-card slide-${slideDirection}`} 
+                                  onClick={() => setSelectedTrack({ ...track, index: track.id === 'other' ? 'Other' : mobileTrackPageIndex + 1 })}
+                                  style={{ width: '100%', maxWidth: '340px', margin: '0 auto' }}
+                                >
+                                  <div className="track-card-inner">
+                                    <span className="track-number">{track.id === 'other' ? '★' : `#${mobileTrackPageIndex + 1}`}</span>
+                                    <h3>{track.title}</h3>
+                                    <div className="view-details-tag">VIEW CHALLENGE →</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="track-pagination-controls">
+                                <button 
+                                  className="track-pagination-arrow"
+                                  onClick={() => {
+                                    if (mobileTrackPageIndex > 0) {
+                                      setSlideDirection('prev');
+                                      setMobileTrackPageIndex(prev => prev - 1);
+                                    }
+                                  }}
+                                  disabled={mobileTrackPageIndex === 0}
+                                  aria-label="Previous Track"
+                                >
+                                  ←
+                                </button>
+                                <div className="track-pagination-numbers">
+                                  {allTracks.map((_, idx) => (
+                                    <button
+                                      key={idx}
+                                      className={`track-pagination-number ${mobileTrackPageIndex === idx ? 'active' : ''}`}
+                                      onClick={() => {
+                                        setSlideDirection(idx > mobileTrackPageIndex ? 'next' : 'prev');
+                                        setMobileTrackPageIndex(idx);
+                                      }}
+                                    >
+                                      {idx === allTracks.length - 1 ? '★' : idx + 1}
+                                    </button>
+                                  ))}
+                                </div>
+                                <button 
+                                  className="track-pagination-arrow"
+                                  onClick={() => {
+                                    if (mobileTrackPageIndex < allTracks.length - 1) {
+                                      setSlideDirection('next');
+                                      setMobileTrackPageIndex(prev => prev + 1);
+                                    }
+                                  }}
+                                  disabled={mobileTrackPageIndex === allTracks.length - 1}
+                                  aria-label="Next Track"
+                                >
+                                  →
+                                </button>
+                              </div>
+                            </>
+                          );
+                        }
 
                         return (
                           <>
                             <div className="tracks-grid-interactive">
-                              {displayedTracks.map((track, i) => (
+                              {allTracks.map((track, i) => (
                                 <div key={track.id} className="track-card-mini" onClick={() => setSelectedTrack({ ...track, index: track.id === 'other' ? 'Other' : i + 1 })}>
                                   <div className="track-card-inner">
                                     <span className="track-number">{track.id === 'other' ? '★' : `#${i + 1}`}</span>
@@ -3154,27 +3274,6 @@ function App() {
                                 </div>
                               ))}
                             </div>
-
-                            {isMobile && allTracks.length > 3 && (
-                              <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                {visibleLandingTracksCount < allTracks.length && (
-                                  <button
-                                    className="join-btn"
-                                    onClick={() => setVisibleLandingTracksCount(prev => prev + 3)}
-                                  >
-                                    SHOW MORE
-                                  </button>
-                                )}
-                                {visibleLandingTracksCount > 3 && (
-                                  <button
-                                    className="btn-secondary"
-                                    onClick={() => setVisibleLandingTracksCount(prev => Math.max(prev - 3, 3))}
-                                  >
-                                    SHOW LESS
-                                  </button>
-                                )}
-                              </div>
-                            )}
                           </>
                         );
                       })()}
@@ -6435,7 +6534,8 @@ function App() {
       )}
 
       {/* Floating Accessibility Widget */}
-      <div className="a11y-widget-container" ref={a11yRef}>
+      {!isMenuOpen && (
+        <div className="a11y-widget-container" ref={a11yRef}>
         <button
           className="a11y-widget-btn"
           onClick={() => setIsA11yOpen(!isA11yOpen)}
@@ -6733,6 +6833,7 @@ function App() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
