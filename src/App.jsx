@@ -3109,32 +3109,21 @@ function App() {
         {(activeView === 'landing' || activeView === 'blog' || activeView === 'profile-view') && (
           <>
             <nav className={`nav-links ${isMenuOpen ? 'mobile-active' : ''}`}>
-              {activeView === 'landing' ? (
-                <>
-                  <a href="#mission" className="nav-link" onClick={() => setIsMenuOpen(false)}>Mission</a>
-                  <a href="#tracks" className="nav-link" onClick={() => setIsMenuOpen(false)}>Tracks</a>
-                  <a href="#timeline" className="nav-link" onClick={() => setIsMenuOpen(false)}>Timeline</a>
-                  <a href="#events" className="nav-link" onClick={() => setIsMenuOpen(false)}>Events</a>
-                  <a href="#rules" className="nav-link" onClick={() => setIsMenuOpen(false)}>Rules</a>
-                  <a href="#sponsors" className="nav-link" onClick={() => setIsMenuOpen(false)}>Sponsors</a>
-                  <a href="#uic-overview" className="nav-link" onClick={() => setIsMenuOpen(false)}>UIC Overview</a>
-                  <a href="#contact" className="nav-link" onClick={() => setIsMenuOpen(false)}>Contact Us</a>
-                  <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); setActiveView('blog'); setIsMenuOpen(false); }}>Blog</a>
-                </>
-              ) : (
-                <>
-                  <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); setActiveView('landing'); setIsMenuOpen(false); }}>Home</a>
+              <>
+                <a href="#mission" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Mission</a>
+                  <a href="#tracks" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Tracks</a>
+                  <a href="#timeline" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Timeline</a>
+                  <a href="#events" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Events</a>
+                  <a href="#rules" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Rules</a>
+                  <a href="#sponsors" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Sponsors</a>
+                  <a href="#uic-overview" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>UIC Overview</a>
+                  <a href="#contact" className="nav-link" onClick={() => { setActiveView('landing'); setIsMenuOpen(false); }}>Contact Us</a>
                   <a href="#" className={`nav-link ${activeView === 'blog' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('blog'); setIsMenuOpen(false); }}>Blog</a>
                 </>
-              )}
 
               <div className="mobile-auth-wrapper">
                 {isLoggedIn ? (
                   <>
-                    <div className="mobile-profile-link" onClick={() => { setActiveView('blog'); setIsMenuOpen(false); }}>
-                      <img src="icons/instagram.svg" alt="blog" />
-                      <span>Blog Feed</span>
-                    </div>
                     <div className="mobile-profile-link" onClick={() => { setActiveView('venue'); setIsMenuOpen(false); }}>
                       <img src="icons/location.svg" alt="venue" />
                       <span>Venue Details</span>
