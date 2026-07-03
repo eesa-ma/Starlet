@@ -3100,6 +3100,12 @@ function App() {
     const techStack = formData.get('techStack') || '';
     const college = formData.get('college') || '';
     const teamName = formData.get('teamName') || '';
+    const phone = (formData.get('phone') || '').trim();
+
+    if (!phone) {
+      alert('Please enter your mobile number. It is required for event day coordination.');
+      return;
+    }
 
     try {
       if (signupRole === 'mentor' && !signupAvatar) {
@@ -3164,6 +3170,7 @@ function App() {
               id: authData.user.id,
               full_name: fullName,
               email: email,
+              phone: phone,
               user_role: signupRole,
               role_title: roleTitle,
               bio: bio,
@@ -3179,6 +3186,16 @@ function App() {
             }
           ], { onConflict: 'id' });
         if (profileError) throw profileError;
+
+        // Backfill phone in registered_emails if it was empty
+        // (keeps both tables in sync for participants who registered via Google Form)
+        if (signupRole === 'attendee' && phone) {
+          await supabase
+            .from('registered_emails')
+            .update({ phone })
+            .eq('email', email)
+            .is('phone', null);
+        }
 
         // Log the signup action for admin awareness
         if (signupRole === 'mentor') {
@@ -4784,6 +4801,14 @@ function App() {
                     <input name="fullName" type="text" placeholder="Full Name" required />
                     <input name="email" type="email" placeholder="Email Address" required />
                     <input name="password" type="password" placeholder="Password" required />
+                    <input
+                      name="phone"
+                      type="tel"
+                      placeholder="Mobile Number (e.g. +91 98765 43210)"
+                      required
+                      pattern="[+\d\s\-()]{7,15}"
+                      title="Enter a valid mobile number"
+                    />
 
                     {signupRole === 'mentor' ? (
                       <>
@@ -5835,7 +5860,12 @@ function App() {
                                               </div>
                                               <div className="user-detail-item">
                                                 <span className="detail-label">Phone</span>
-                                                <span className="detail-value">{u.phone || '—'}</span>
+                                                <span className="detail-value">
+                                                  {u.phone
+                                                    ? <a href={`tel:${u.phone}`} style={{ color: 'var(--pink-primary)', fontWeight: 700 }}>📞 {u.phone}</a>
+                                                    : <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>Not provided</span>
+                                                  }
+                                                </span>
                                               </div>
                                               <div className="user-detail-item">
                                                 <span className="detail-label">College / Org</span>
