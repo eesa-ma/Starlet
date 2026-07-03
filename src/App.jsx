@@ -2755,9 +2755,15 @@ function App() {
   };
 
   const handleToggleAttendance = async (userId, isPresent) => {
+    // Optimistically update the UI so the checkbox ticks instantly
+    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, is_approved: isPresent } : u));
+    
     const { error } = await supabase.from('profiles').update({ is_approved: isPresent }).eq('id', userId);
-    if (error) alert(error.message);
-    else {
+    if (error) {
+      alert(error.message);
+      fetchAllUsers(); // Revert to actual DB state on error
+    } else {
+      // Background sync to ensure it saved properly
       fetchAllUsers();
     }
   };
@@ -6044,7 +6050,6 @@ function App() {
                                 <th>User Info</th>
                                 <th>College / Affiliation</th>
                                 <th>Phone</th>
-                                <th>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -6058,17 +6063,6 @@ function App() {
                                   </td>
                                   <td>{u.college || '-'}</td>
                                   <td>{u.phone || '-'}</td>
-                                  <td>
-                                    <div className="table-actions">
-                                      <button
-                                        className="btn-table-action delete"
-                                        title="Delete volunteer"
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id, u.full_name); }}
-                                      >
-                                        REMOVE
-                                      </button>
-                                    </div>
-                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -6554,37 +6548,46 @@ function App() {
                     <span className="stat-value" style={{ fontSize: '1rem' }}>{user.college || 'N/A'}</span>
                   </div>
                 </div>
-                <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                  <button className="auth-btn" onClick={handleLogout} style={{ background: '#d32f2f' }}>
-                    Logout
-                  </button>
-                </div>
+
               </div>
 
               <div className="profile-content">
-                <div className="profile-tabs">
-                  <div className="profile-tab active">Attendee Attendance</div>
-                </div>
-
-                <div className="tab-content" style={{ background: '#0a0a1a', padding: '1.5rem', borderRadius: '0 0 14px 14px', border: '3px solid var(--text-navy)', borderTop: 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <h3 className="text-3d" style={{ fontSize: '1.5rem', margin: 0 }}>Mark Attendance</h3>
-                    <input
-                      type="text"
-                      placeholder="Search attendees..."
-                      value={volunteerSearchQuery}
-                      onChange={(e) => { setVolunteerSearchQuery(e.target.value); setVolunteerPage(1); }}
-                      style={{ padding: '8px 12px', borderRadius: '10px', border: '2px solid var(--text-navy)', width: '100%', maxWidth: '300px' }}
-                    />
+                <div className="admin-panel user-directory">
+                  <div className="directory-header-row">
+                    <h2 className="text-3d" style={{ fontSize: '2rem', margin: 0, textTransform: 'uppercase' }}>Mark Attendance</h2>
+                    <div className="directory-controls">
+                      <div className="directory-search" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="Search attendees..."
+                          value={volunteerSearchQuery}
+                          onChange={(e) => { setVolunteerSearchQuery(e.target.value); setVolunteerPage(1); }}
+                          style={{
+                            padding: '8px 12px 8px 36px',
+                            borderRadius: '10px',
+                            border: '2px solid #001f3f',
+                            background: '#f5f6f8',
+                            color: '#001f3f',
+                            fontFamily: 'Outfit, sans-serif',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            width: '250px'
+                          }}
+                        />
+                        <svg style={{ position: 'absolute', left: '12px', color: '#64748b' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="custom-table-container">
-                    <table className="custom-table">
+                  <div className="user-table-wrapper">
+                    <table className="admin-table">
                       <thead>
                         <tr>
-                          <th>Name</th>
-                          <th>Email</th>
-                          <th style={{ textAlign: 'center' }}>Present</th>
+                          <th>User Info</th>
+                          <th>College / Affiliation</th>
+                          <th style={{ textAlign: 'center' }}>Presence</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -6599,20 +6602,32 @@ function App() {
                           const paginated = filtered.slice((volunteerPage - 1) * itemsPerPage, volunteerPage * itemsPerPage);
 
                           if (paginated.length === 0) {
-                            return <tr><td colSpan="3" style={{ textAlign: 'center' }}>No attendees found.</td></tr>;
+                            return <tr><td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>No attendees found.</td></tr>;
                           }
 
                           return paginated.map(u => (
-                            <tr key={u.id}>
-                              <td>{u.full_name}</td>
-                              <td>{u.email}</td>
-                              <td style={{ textAlign: 'center' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={u.is_approved || false}
-                                  onChange={(e) => handleToggleAttendance(u.id, e.target.checked)}
-                                  style={{ transform: 'scale(1.5)', cursor: 'pointer' }}
-                                />
+                            <tr key={u.id} className="table-row-hover">
+                              <td>
+                                <div className="table-user">
+                                  <strong>{u.full_name}</strong>
+                                  <span>{u.email}</span>
+                                </div>
+                              </td>
+                              <td>{u.college || u.venue || '-'}</td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={u.is_approved || false}
+                                    onChange={(e) => handleToggleAttendance(u.id, e.target.checked)}
+                                    style={{
+                                      width: '20px',
+                                      height: '20px',
+                                      cursor: 'pointer',
+                                      accentColor: 'var(--pink-primary)'
+                                    }}
+                                  />
+                                </div>
                               </td>
                             </tr>
                           ));
