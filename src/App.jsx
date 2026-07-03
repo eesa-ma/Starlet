@@ -2087,9 +2087,17 @@ function App() {
           bio: profile.bio || '',
           teamName: profile.team_name || '',
           trackId: profile.track_id || '',
+          college: profile.college || '',
+          stack: profile.stack || [],
+          venue: profile.venue || '',
+          roleTitle: profile.role_title || '',
+          yearsOfExperience: profile.years_of_experience || '',
+          languages: profile.languages || '',
+          website: profile.website_url || '',
           socials: {
-            github: profile.social_github || '',
-            linkedin: profile.social_linkedin || ''
+            github: profile.github_url || '',
+            linkedin: profile.linkedin_url || '',
+            instagram: profile.twitter_url || ''
           },
           isApproved: profile.is_approved || false
         };
@@ -7788,12 +7796,14 @@ function App() {
               📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post / Vlog' : 'Posts / Vlogs'}
             </div>
 
-            <div className="profile-field" style={{ marginTop: '2rem' }}>
-              <label>{viewProfileUser.role === 'mentor' ? 'Mentor Bio' : 'Hacker Bio'}</label>
-              <div className="field-value" style={{ border: '2px solid var(--text-navy)', padding: '1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                {viewProfileUser.bio || 'No bio written yet.'}
+            {viewProfileUser.bio && (
+              <div className="profile-field" style={{ marginTop: '2rem' }}>
+                <label>{viewProfileUser.role === 'mentor' ? 'Mentor Bio' : 'Hacker Bio'}</label>
+                <div className="field-value" style={{ border: '2px solid var(--text-navy)', padding: '1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                  {viewProfileUser.bio}
+                </div>
               </div>
-            </div>
+            )}
 
             <button className="join-btn" style={{ marginTop: '2rem', width: '100%' }} onClick={() => setActiveView('blog')}>
               BACK TO BLOG FEED
@@ -7801,24 +7811,87 @@ function App() {
           </div>
 
           <div className="profile-main">
-            {viewProfileUser.role === 'attendee' ? (
-              <>
-                <div className="profile-card">
-                  <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.2rem' }}>Team Details</h3>
+            {/* ROLE SPECIFIC DETAILS */}
+            {(viewProfileUser.role === 'mentor') && (viewProfileUser.venue || viewProfileUser.roleTitle || viewProfileUser.yearsOfExperience || viewProfileUser.stack?.length > 0 || viewProfileUser.languages || viewProfileUser.website) ? (
+              <div className="profile-card">
+                <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.2rem' }}>Mentor Profile</h3>
+                {viewProfileUser.venue && (
                   <div className="profile-field">
-                    <label>Team Status</label>
-                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.teamName ? 'In a Team' : 'Individual'}</div>
+                    <label>Company / Organization</label>
+                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.venue}</div>
                   </div>
-                  {viewProfileUser.teamName && (
-                    <div className="profile-field">
-                      <label>Team Name</label>
-                      <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.teamName}</div>
+                )}
+                {viewProfileUser.roleTitle && (
+                  <div className="profile-field">
+                    <label>Role Title</label>
+                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.roleTitle}</div>
+                  </div>
+                )}
+                {viewProfileUser.yearsOfExperience && (
+                  <div className="profile-field">
+                    <label>Years of Experience</label>
+                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.yearsOfExperience}</div>
+                  </div>
+                )}
+                {viewProfileUser.stack?.length > 0 && (
+                  <div className="profile-field">
+                    <label>Expertise / Tech Stack</label>
+                    <div className="field-value" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {viewProfileUser.stack.map(tech => (
+                        <span key={tech} style={{ background: 'var(--yellow-star)', color: 'var(--text-navy)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                          {tech}
+                        </span>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+                {viewProfileUser.languages && (
+                  <div className="profile-field">
+                    <label>Languages</label>
+                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.languages}</div>
+                  </div>
+                )}
+                {viewProfileUser.website && (
+                  <div className="profile-field">
+                    <label>Website</label>
+                    <div className="field-value">
+                      <a href={viewProfileUser.website.startsWith('http') ? viewProfileUser.website : `https://${viewProfileUser.website}`} target="_blank" rel="noreferrer" style={{ color: 'var(--blue-shadow)', fontWeight: 'bold' }}>
+                        {viewProfileUser.website}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
-                <div className="profile-card">
-                  <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.2rem' }}>Innovation Track</h3>
+            {((viewProfileUser.role === 'attendee' || viewProfileUser.role === 'volunteer' || viewProfileUser.role === 'admin') && (viewProfileUser.college || viewProfileUser.stack?.length > 0 || viewProfileUser.teamName)) ? (
+              <div className="profile-card">
+                <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.2rem' }}>{viewProfileUser.role === 'attendee' ? 'Hacker Details' : 'Details'}</h3>
+                {viewProfileUser.college && (
+                  <div className="profile-field">
+                    <label>College / Affiliation</label>
+                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.college}</div>
+                  </div>
+                )}
+                {viewProfileUser.stack?.length > 0 && (
+                  <div className="profile-field">
+                    <label>Tech Stack</label>
+                    <div className="field-value" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {viewProfileUser.stack.map(tech => (
+                        <span key={tech} style={{ background: 'var(--yellow-star)', color: 'var(--text-navy)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {viewProfileUser.teamName && (
+                  <div className="profile-field">
+                    <label>Team Name</label>
+                    <div className="field-value" style={{ fontWeight: 'bold' }}>{viewProfileUser.teamName}</div>
+                  </div>
+                )}
+                {viewProfileUser.role === 'attendee' && (
                   <div className="profile-field">
                     <label>Selected Track</label>
                     <div className="field-value">
@@ -7827,37 +7900,35 @@ function App() {
                       </strong>
                     </div>
                   </div>
-                </div>
-              </>
-            ) : null}
-
-            <div className="profile-card">
-              <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.2rem' }}>Social Connectivity</h3>
-              <div className="social-connect-grid">
-                {viewProfileUser.socials.github ? (
-                  <a href={viewProfileUser.socials.github} target="_blank" rel="noreferrer" className="social-connect-item-view">
-                    <img src="icons/github.svg" alt="GitHub" />
-                    <span>View GitHub Profile</span>
-                  </a>
-                ) : (
-                  <span className="social-connect-item-view empty">
-                    <img src="icons/github.svg" alt="GitHub" />
-                    <span>No GitHub linked</span>
-                  </span>
-                )}
-                {viewProfileUser.socials.linkedin ? (
-                  <a href={viewProfileUser.socials.linkedin} target="_blank" rel="noreferrer" className="social-connect-item-view">
-                    <img src="icons/linkedin.svg" alt="LinkedIn" />
-                    <span>View LinkedIn Profile</span>
-                  </a>
-                ) : (
-                  <span className="social-connect-item-view empty">
-                    <img src="icons/linkedin.svg" alt="LinkedIn" />
-                    <span>No LinkedIn linked</span>
-                  </span>
                 )}
               </div>
-            </div>
+            ) : null}
+
+            {(viewProfileUser.socials.github || viewProfileUser.socials.linkedin || viewProfileUser.socials.instagram) ? (
+              <div className="profile-card">
+                <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.2rem' }}>Social Connectivity</h3>
+                <div className="social-connect-grid">
+                  {viewProfileUser.socials.github && (
+                    <a href={viewProfileUser.socials.github} target="_blank" rel="noreferrer" className="social-connect-item-view">
+                      <img src="icons/github.svg" alt="GitHub" />
+                      <span>View GitHub Profile</span>
+                    </a>
+                  )}
+                  {viewProfileUser.socials.linkedin && (
+                    <a href={viewProfileUser.socials.linkedin} target="_blank" rel="noreferrer" className="social-connect-item-view">
+                      <img src="icons/linkedin.svg" alt="LinkedIn" />
+                      <span>View LinkedIn Profile</span>
+                    </a>
+                  )}
+                  {viewProfileUser.socials.instagram && (
+                    <a href={viewProfileUser.socials.instagram.startsWith('http') ? viewProfileUser.socials.instagram : `https://${viewProfileUser.socials.instagram}`} target="_blank" rel="noreferrer" className="social-connect-item-view">
+                      <img src="icons/instagram.svg" alt="Instagram" />
+                      <span>View Instagram</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             {/* VLOGS / POSTS GRID */}
             <div className="profile-card">
