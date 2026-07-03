@@ -313,6 +313,8 @@ function App() {
   const [userDirectoryPage, setUserDirectoryPage] = useState(1);
   const [userRoleFilter, setUserRoleFilter] = useState('all'); // all, mentor, attendee
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [volunteerSearchQuery, setVolunteerSearchQuery] = useState('');
+  const [volunteerPage, setVolunteerPage] = useState(1);
   const [isOtherTrackSelected, setIsOtherTrackSelected] = useState(false);
   const [customTrackTitle, setCustomTrackTitle] = useState('');
   const [customTrackDesc, setCustomTrackDesc] = useState('');
@@ -870,7 +872,7 @@ function App() {
         if (user.role === 'mentor' || (user.role === 'admin' && adminActiveTab === 'mentor')) {
           fetchMentorRequests();
         }
-        if (user.role === 'admin') {
+        if (user.role === 'admin' || user.role === 'volunteer') {
           fetchAllUsers(); // Also fetches system_issues
         }
       }
@@ -2753,9 +2755,15 @@ function App() {
   };
 
   const handleToggleAttendance = async (userId, isPresent) => {
+    // Optimistically update the UI so the checkbox ticks instantly
+    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, is_approved: isPresent } : u));
+    
     const { error } = await supabase.from('profiles').update({ is_approved: isPresent }).eq('id', userId);
-    if (error) alert(error.message);
-    else {
+    if (error) {
+      alert(error.message);
+      fetchAllUsers(); // Revert to actual DB state on error
+    } else {
+      // Background sync to ensure it saved properly
       fetchAllUsers();
     }
   };
@@ -3118,8 +3126,8 @@ function App() {
     }
 
     try {
-      if (signupRole === 'mentor' && !signupAvatar) {
-        alert('Please upload a profile photo. A profile photo is required for mentors.');
+      if (!signupAvatar) {
+        alert('Please upload a profile photo. A profile photo is required for registration.');
         return;
       }
 
@@ -3191,7 +3199,7 @@ function App() {
               team_status: signupRole === 'attendee' ? teamStatus : null,
               needs_teaming: signupRole === 'attendee' ? needsTeaming : false,
               team_name: signupRole === 'attendee' ? teamName : null,
-              is_approved: signupRole === 'attendee',
+              is_approved: signupRole !== 'mentor',
               venue: signupRole === 'attendee' ? selectedVenueChosen : null
             }
           ], { onConflict: 'id' });
@@ -4742,6 +4750,9 @@ function App() {
                           <p style={{ marginBottom: '1.5rem' }}>Mind Empowered (ME) is a charitable organization based in India. It is the brainchild of Maya Menon and her sister - two sisters who resonate positivity and happiness wherever they go.</p>
                           <p style={{ marginBottom: '2.5rem' }}>The sisters realized there was a strong need to eliminate the stigma associated with mental health from our society. Hence, the idea of an open forum to help the students came to life by forming "ME".</p>
                           <strong style={{ color: 'var(--blue-shadow)', letterSpacing: '1px', textTransform: 'uppercase', fontSize: '0.9rem', display: 'block' }}>A MIND EMPOWERED INITIATIVE</strong>
+                          <a href="https://www.mind-empowered.org" target="_blank" rel="noreferrer" className="join-btn" style={{ display: 'inline-block', marginTop: '1.5rem', textDecoration: 'none', padding: '12px 24px', fontSize: '1rem' }}>
+                            VISIT US
+                          </a>
                         </div>
                         <div className="section-visual-small" style={{ borderRadius: '26px', overflow: 'hidden', border: '3px solid var(--text-navy)', boxShadow: '4px 4px 0px var(--text-navy)', maxWidth: '350px', background: '#fff' }}>
                           <img src={section.image} alt={section.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -4800,7 +4811,7 @@ function App() {
                     <div className="signup-avatar-preview">
                       <img src={signupAvatarPreview || 'icons/user-profile.svg'} alt="preview" />
                       <label className="photo-upload-btn">
-                        {signupRole === 'mentor' ? 'ADD PHOTO *' : 'ADD PHOTO'}
+                        {'ADD PHOTO *'}
                         <input type="file" hidden accept="image/*" onChange={handleSignupAvatarChange} />
                       </label>
                     </div>
@@ -4812,6 +4823,7 @@ function App() {
                     >
                       <option value="attendee">I am an Attendee</option>
                       <option value="mentor">I am a Mentor</option>
+                      <option value="volunteer">I am a Volunteer</option>
                     </select>
                   </div>
 
@@ -4837,41 +4849,43 @@ function App() {
                       <>
                         <input name="college" type="text" placeholder="College or Organization Name" required />
 
-                        <div className="teaming-options">
-                          <label className="teaming-label">Participation Type:</label>
-                          <div className="teaming-radios">
-                            <label>
-                              <input
-                                type="radio"
-                                name="teamStatus"
-                                value="single"
-                                checked={teamStatus === 'single'}
-                                onChange={() => setTeamStatus('single')}
-                              /> Solo
-                            </label>
-                            <label>
-                              <input
-                                type="radio"
-                                name="teamStatus"
-                                value="team"
-                                checked={teamStatus === 'team'}
-                                onChange={() => setTeamStatus('team')}
-                              /> Existing Team
-                            </label>
-                          </div>
+                        {signupRole === 'attendee' && (
+                          <div className="teaming-options">
+                            <label className="teaming-label">Participation Type:</label>
+                            <div className="teaming-radios">
+                              <label>
+                                <input
+                                  type="radio"
+                                  name="teamStatus"
+                                  value="single"
+                                  checked={teamStatus === 'single'}
+                                  onChange={() => setTeamStatus('single')}
+                                /> Solo
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name="teamStatus"
+                                  value="team"
+                                  checked={teamStatus === 'team'}
+                                  onChange={() => setTeamStatus('team')}
+                                /> Existing Team
+                              </label>
+                            </div>
 
-                          {teamStatus === 'single' ? (
-                            <label className="teaming-checkbox">
-                              <input
-                                type="checkbox"
-                                checked={needsTeaming}
-                                onChange={(e) => setNeedsTeaming(e.target.checked)}
-                              /> Want us to find a team for you?
-                            </label>
-                          ) : (
-                            <input name="teamName" type="text" placeholder="Enter your Team Name" required />
-                          )}
-                        </div>
+                            {teamStatus === 'single' ? (
+                              <label className="teaming-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={needsTeaming}
+                                  onChange={(e) => setNeedsTeaming(e.target.checked)}
+                                /> Want us to find a team for you?
+                              </label>
+                            ) : (
+                              <input name="teamName" type="text" placeholder="Enter your Team Name" required />
+                            )}
+                          </div>
+                        )}
                       </>
                     )}
 
@@ -4900,8 +4914,8 @@ function App() {
                 style={{
                   marginTop: '2rem',
                   width: '100%',
-                  opacity: (activeView === 'signup' && signupRole === 'mentor' && !signupAvatarPreview) ? 0.5 : 1,
-                  cursor: (activeView === 'signup' && signupRole === 'mentor' && !signupAvatarPreview) ? 'not-allowed' : 'pointer'
+                  opacity: (activeView === 'signup' && !signupAvatarPreview) ? 0.5 : 1,
+                  cursor: (activeView === 'signup' && !signupAvatarPreview) ? 'not-allowed' : 'pointer'
                 }}
               >
                 {activeView === 'login' ? 'LOGIN TO CONSOLE' : 'INITIALIZE REGISTRATION'}
@@ -5980,6 +5994,89 @@ function App() {
                   })()}
                 </div>
 
+                {/* VOLUNTEER CONTROL SECTION */}
+                <div className="admin-panel user-directory" id="volunteer-control-section" style={{ marginBottom: '4rem' }}>
+                  <div className="directory-header-row">
+                    <h2 className="text-3d" style={{ fontSize: '1.5rem', margin: 0 }}>Volunteer Control</h2>
+                    <div className="directory-controls">
+                      <div className="directory-search" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="Search volunteers..."
+                          value={volunteerSearchQuery}
+                          onChange={(e) => { setVolunteerSearchQuery(e.target.value); setVolunteerPage(1); }}
+                          style={{
+                            padding: '8px 12px 8px 36px',
+                            borderRadius: '10px',
+                            border: '2px solid #001f3f',
+                            background: '#f5f6f8',
+                            color: '#001f3f',
+                            fontFamily: 'Outfit, sans-serif',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            width: '250px'
+                          }}
+                        />
+                        <svg style={{ position: 'absolute', left: '12px', color: '#64748b' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const volunteerUsers = allUsers.filter(u => u.user_role === 'volunteer');
+                    const filtered = volunteerUsers.filter(u => {
+                      if (!volunteerSearchQuery.trim()) return true;
+                      const q = volunteerSearchQuery.toLowerCase().trim();
+                      return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+                    });
+
+                    const itemsPerPage = 5;
+                    const paginated = filtered.slice((volunteerPage - 1) * itemsPerPage, volunteerPage * itemsPerPage);
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b', fontStyle: 'italic' }}>
+                          No volunteers found matching your criteria.
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <>
+                        <div className="custom-table-container">
+                          <table className="custom-table admin-table">
+                            <thead>
+                              <tr>
+                                <th>User Info</th>
+                                <th>College / Affiliation</th>
+                                <th>Phone</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {paginated.map(u => (
+                                <tr key={u.id} className="table-row-hover">
+                                  <td>
+                                    <div className="table-user">
+                                      <strong>{u.full_name}</strong>
+                                      <span>{u.email}</span>
+                                    </div>
+                                  </td>
+                                  <td>{u.college || '-'}</td>
+                                  <td>{u.phone || '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {renderPagination(volunteerPage, filtered.length, 5, setVolunteerPage)}
+                      </>
+                    );
+                  })()}
+                </div>
+
                 {/* PROJECT SUBMISSIONS OVERVIEW */}
                 <div className="admin-panel" id="project-submissions-section" style={{ marginBottom: '4rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -6427,6 +6524,129 @@ function App() {
                       )}
                     </div>
                   </div>
+                </div>
+              </div>
+            </>
+
+          ) : user.role === 'volunteer' ? (
+            /* VOLUNTEER PROFILE VIEW */
+            <>
+              <div className="profile-sidebar">
+                <div className="profile-avatar" style={{ position: 'relative' }}>
+                  <img
+                    src={user.avatarUrl || 'icons/user-profile.svg'}
+                    alt="avatar"
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                </div>
+                <h2 className="text-3d" style={{ marginTop: '1rem', fontSize: '1.8rem', textAlign: 'center' }}>
+                  {user.name}
+                </h2>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
+                  Starlet Volunteer
+                </div>
+                <div className="profile-stats">
+                  <div className="stat-box">
+                    <span className="stat-label">Affiliation</span>
+                    <span className="stat-value" style={{ fontSize: '1rem' }}>{user.college || 'N/A'}</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="profile-content">
+                <div className="admin-panel user-directory">
+                  <div className="directory-header-row">
+                    <h2 className="text-3d" style={{ fontSize: '2rem', margin: 0, textTransform: 'uppercase' }}>Mark Attendance</h2>
+                    <div className="directory-controls">
+                      <div className="directory-search" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="Search attendees..."
+                          value={volunteerSearchQuery}
+                          onChange={(e) => { setVolunteerSearchQuery(e.target.value); setVolunteerPage(1); }}
+                          style={{
+                            padding: '8px 12px 8px 36px',
+                            borderRadius: '10px',
+                            border: '2px solid #001f3f',
+                            background: '#f5f6f8',
+                            color: '#001f3f',
+                            fontFamily: 'Outfit, sans-serif',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            width: '250px'
+                          }}
+                        />
+                        <svg style={{ position: 'absolute', left: '12px', color: '#64748b' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="user-table-wrapper">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>User Info</th>
+                          <th>College / Affiliation</th>
+                          <th style={{ textAlign: 'center' }}>Presence</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const attendees = allUsers.filter(u => u.user_role === 'attendee');
+                          const filtered = attendees.filter(u => {
+                            if (!volunteerSearchQuery.trim()) return true;
+                            const q = volunteerSearchQuery.toLowerCase();
+                            return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+                          });
+                          const itemsPerPage = 10;
+                          const paginated = filtered.slice((volunteerPage - 1) * itemsPerPage, volunteerPage * itemsPerPage);
+
+                          if (paginated.length === 0) {
+                            return <tr><td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>No attendees found.</td></tr>;
+                          }
+
+                          return paginated.map(u => (
+                            <tr key={u.id} className="table-row-hover">
+                              <td>
+                                <div className="table-user">
+                                  <strong>{u.full_name}</strong>
+                                  <span>{u.email}</span>
+                                </div>
+                              </td>
+                              <td>{u.college || u.venue || '-'}</td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={u.is_approved || false}
+                                    onChange={(e) => handleToggleAttendance(u.id, e.target.checked)}
+                                    style={{
+                                      width: '20px',
+                                      height: '20px',
+                                      cursor: 'pointer',
+                                      accentColor: 'var(--pink-primary)'
+                                    }}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                  {(() => {
+                    const attendees = allUsers.filter(u => u.user_role === 'attendee');
+                    const filtered = attendees.filter(u => {
+                      if (!volunteerSearchQuery.trim()) return true;
+                      const q = volunteerSearchQuery.toLowerCase();
+                      return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+                    });
+                    return renderPagination(volunteerPage, filtered.length, 10, setVolunteerPage);
+                  })()}
                 </div>
               </div>
             </>
