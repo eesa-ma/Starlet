@@ -175,14 +175,16 @@ const eventsData = [
     name: "Indian Sign Language Interpreter",
     person: "Archa",
     company: "",
-    image: "events/Archa Krishnan ISL Interpreter .jpeg"
+    image: "events/Archa Krishnan ISL Interpreter .jpeg",
+    objectPosition: "top"
   },
   {
     id: 3,
     name: "Kaleripayettu",
     person: "Gurukkal Rajeev Chaithanya",
     company: "Bodhi Sutra",
-    image: "events/Gurukkal Rajeev Chaithanya Kaleripayuttu.jpeg"
+    image: "events/Gurukkal Rajeev Chaithanya Kaleripayuttu.jpeg",
+    objectPosition: "top"
   },
   {
     id: 4,
@@ -215,7 +217,8 @@ const eventsData = [
     name: "Speaker",
     person: "Ms. Padmini",
     company: "Principal, Smrithi Special School",
-    image: "events/Ms. Padmini.jpeg"
+    image: "events/Ms. Padmini.jpeg",
+    objectPosition: "50% 40%"
   }
 ];
 
@@ -4623,7 +4626,7 @@ function App() {
                                         background: 'var(--yellow-star)',
                                         marginBottom: '0.4rem'
                                       }}>
-                                        <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                                        <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
                                       </div>
                                       <span style={{ fontSize: '0.75rem', fontWeight: '900', color: 'var(--text-navy)', textAlign: 'center', whiteSpace: 'normal', lineHeight: 1.1 }}>{m.name}</span>
                                       <span style={{ fontSize: '0.62rem', color: '#5c3c24', opacity: 0.8, textAlign: 'center', marginTop: '0.1rem', lineHeight: 1.1 }}>{m.role}</span>
@@ -4673,7 +4676,7 @@ function App() {
                                     <img
                                       src={ev.image}
                                       alt={ev.person}
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: ev.objectPosition || 'center' }}
                                       loading="lazy"
                                     />
                                   ) : (
