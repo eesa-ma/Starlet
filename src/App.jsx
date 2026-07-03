@@ -6051,7 +6051,6 @@ function App() {
                             <thead>
                               <tr>
                                 <th>User Info</th>
-                                <th>College / Affiliation</th>
                                 <th>Phone</th>
                               </tr>
                             </thead>
@@ -6064,7 +6063,6 @@ function App() {
                                       <span>{u.email}</span>
                                     </div>
                                   </td>
-                                  <td>{u.college || '-'}</td>
                                   <td>{u.phone || '-'}</td>
                                 </tr>
                               ))}
@@ -6557,7 +6555,7 @@ function App() {
               <div className="profile-content">
                 <div className="admin-panel user-directory">
                   <div className="directory-header-row">
-                    <h2 className="text-3d" style={{ fontSize: '2rem', margin: 0, textTransform: 'uppercase' }}>Mark Attendance</h2>
+                    <h2 className="text-3d" style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', margin: 0, textTransform: 'uppercase' }}>Mark Attendance</h2>
                     <div className="directory-controls">
                       <div className="directory-search" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                         <input
@@ -6589,7 +6587,6 @@ function App() {
                       <thead>
                         <tr>
                           <th>User Info</th>
-                          <th>College / Affiliation</th>
                           <th style={{ textAlign: 'center' }}>Presence</th>
                         </tr>
                       </thead>
@@ -6616,7 +6613,6 @@ function App() {
                                   <span>{u.email}</span>
                                 </div>
                               </td>
-                              <td>{u.college || u.venue || '-'}</td>
                               <td>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   <input

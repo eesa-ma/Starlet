@@ -2017,6 +2017,8 @@ header.header-minimal {
 .stat-label {
     font-family: 'Fredoka One', cursive;
     color: var(--text-muted);
+    display: block;
+    margin-bottom: 0.3rem;
 }
 
 .stat-value {
@@ -2641,6 +2643,10 @@ footer {
     gap: 2rem;
     background: var(--bg-cream);
     min-height: 100vh;
+}
+
+.profile-content {
+    min-width: 0;
 }
 
 @media (max-width: 1000px) {
