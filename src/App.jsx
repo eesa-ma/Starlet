@@ -2300,11 +2300,49 @@ function App() {
   };
 
   const fetchAllUsers = async () => {
-    const { data, error } = await supabase
+    const { data: profilesData, error } = await supabase
       .from('profiles')
       .select('*')
       .order('full_name');
-    if (data) setAllUsers(data);
+
+    // Fetch registered_emails to sync phone numbers
+    const { data: whitelistData } = await supabase
+      .from('registered_emails')
+      .select('email, phone');
+
+    if (profilesData) {
+      const mappedProfiles = await Promise.all(profilesData.map(async (u) => {
+        let currentPhone = u.phone;
+        
+        // Find corresponding whitelisted email phone if profile phone is missing
+        const matchedWhitelist = whitelistData?.find(
+          w => w.email?.toLowerCase().trim() === u.email?.toLowerCase().trim()
+        );
+
+        if (!currentPhone && matchedWhitelist?.phone) {
+          currentPhone = matchedWhitelist.phone;
+          // Sync to profiles db
+          supabase
+            .from('profiles')
+            .update({ phone: matchedWhitelist.phone })
+            .eq('id', u.id)
+            .then(({ error: syncErr }) => {
+              if (syncErr) console.error("Sync phone err for profile:", syncErr);
+            });
+        } else if (currentPhone && matchedWhitelist && !matchedWhitelist.phone) {
+          // Sync to registered_emails db
+          supabase
+            .from('registered_emails')
+            .update({ phone: currentPhone })
+            .eq('email', u.email)
+            .then(({ error: syncErr }) => {
+              if (syncErr) console.error("Sync phone err for registered_emails:", syncErr);
+            });
+        }
+        return { ...u, phone: currentPhone };
+      }));
+      setAllUsers(mappedProfiles);
+    }
 
     const { data: issues } = await supabase
       .from('system_issues')
@@ -6076,14 +6114,26 @@ function App() {
                                                     className="btn-small accept"
                                                     onClick={() => { navigator.clipboard.writeText(magicLinkState[u.id].link); }}
                                                   >📋 Copy Link</button>
-                                                  <a
-                                                    href={`https://wa.me/?text=${encodeURIComponent(`Hi ${u.full_name}! Here is your one-time Starlet login link (valid 1 hour):\n${magicLinkState[u.id].link}`)}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{ textDecoration: 'none' }}
-                                                  >
-                                                    <button className="btn-small accept" style={{ background: '#25D366', borderColor: '#25D366' }}>💬 Send WhatsApp</button>
-                                                  </a>
+                                                  {(() => {
+                                                    const msg = `Hi ${u.full_name}! Here is your one-time Starlet login link (valid 1 hour):\n${magicLinkState[u.id].link}`;
+                                                    let cleanPhone = u.phone ? u.phone.replace(/\D/g, '') : '';
+                                                    if (cleanPhone && cleanPhone.length === 10) {
+                                                      cleanPhone = '91' + cleanPhone;
+                                                    }
+                                                    const waHref = cleanPhone 
+                                                      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
+                                                      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                                                    return (
+                                                      <a
+                                                        href={waHref}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{ textDecoration: 'none' }}
+                                                      >
+                                                        <button className="btn-small accept" style={{ background: '#25D366', borderColor: '#25D366' }}>💬 Send WhatsApp</button>
+                                                      </a>
+                                                    );
+                                                  })()}
                                                   <button
                                                     className="btn-small delete"
                                                     onClick={() => setMagicLinkState(prev => ({ ...prev, [u.id]: null }))}
