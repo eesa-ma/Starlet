@@ -237,9 +237,10 @@ const SponsorsPage = ({ onBack }) => {
               <div key={item.id} className={`sponsors-testimonial-card ${!item.src.endsWith('.mp4') ? 'image-testimonial' : ''}`}>
                 {item.src.endsWith('.mp4') ? (
                   <video 
-                    src={item.src} 
+                    src={`${item.src}#t=0.001`} 
                     controls 
-                    preload="none"
+                    preload="metadata"
+                    playsInline
                     className="sponsors-testimonial-video"
                   />
                 ) : (
