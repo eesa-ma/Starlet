@@ -46,6 +46,7 @@ function syncAllFromSupabase() {
     submissionsSheet.appendRow([
       "Team Name", 
       "Project Name", 
+      "Project Description",
       "Video & PPT Link (Google Drive)", 
       "GitHub Repository Link", 
       "AI Score (%)", 
@@ -58,6 +59,7 @@ function syncAllFromSupabase() {
       submissionsSheet.appendRow([
         sub.team_name,
         sub.project_name,
+        sub.description || "—",
         sub.demo_url,
         sub.github_url,
         sub.ai_percentage !== null ? sub.ai_percentage + "%" : "—",
@@ -101,7 +103,7 @@ function syncAllFromSupabase() {
     });
     
     // Append a summary card at the bottom
-    attendanceSheet.appendRow([]);
+    attendanceSheet.appendRow([""]);
     attendanceSheet.appendRow(["Summary Stats:"]);
     attendanceSheet.appendRow(["Total Approved Attendees Present", presentCount]);
     attendanceSheet.appendRow(["Total Registered Attendees", attendees.length]);
@@ -154,7 +156,7 @@ function syncAllFromSupabase() {
         ]);
       });
       // Add empty spacing row between teams
-      teamsSheet.appendRow([]);
+      teamsSheet.appendRow([""]);
     });
     
     formatHeaderRow(teamsSheet);
@@ -174,7 +176,7 @@ function getOrCreateSheet(ss, name) {
 
 // Styling helper for header rows
 function formatHeaderRow(sheet) {
-  const range = sheet.getRange("A1:G1");
+  const range = sheet.getRange("A1:H1");
   range.setBackground("#001F3F"); // Navy
   range.setFontColor("#FFFFFF");  // White
   range.setFontWeight("bold");
