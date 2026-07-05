@@ -21,6 +21,7 @@ function syncAllFromSupabase() {
   const submissionsSheet = getOrCreateSheet(ss, "Submissions");
   const attendanceSheet = getOrCreateSheet(ss, "Attendance");
   const teamsSheet = getOrCreateSheet(ss, "Teams & Members");
+  const participantsSheet = getOrCreateSheet(ss, "Participants");
   
   // Set up API Headers
   const headers = {
@@ -203,6 +204,64 @@ function syncAllFromSupabase() {
   });
   
   formatHeaderRow(teamsSheet);
+
+  // ==========================================
+  // 4. SYNC PARTICIPANTS (All Profiles of Attendees)
+  // ==========================================
+  participantsSheet.clear();
+  participantsSheet.appendRow([
+    "Full Name", 
+    "Email Address", 
+    "Phone Number", 
+    "College / Institution", 
+    "Allocated Venue", 
+    "Team Name", 
+    "Role", 
+    "Selected Track", 
+    "Tech Stack", 
+    "GitHub Profile", 
+    "LinkedIn Profile", 
+    "Registration Date"
+  ]);
+
+  attendees.forEach(att => {
+    let role = "Solo Hacker";
+    if (att.team_name && !att.team_name.startsWith("Individual-")) {
+      role = att.is_team_leader ? "Team Leader 👑" : "Team Member";
+    }
+
+    let stackList = "—";
+    if (att.stack) {
+      if (Array.isArray(att.stack)) {
+        stackList = att.stack.join(", ");
+      } else if (typeof att.stack === "string") {
+        try {
+          const parsed = JSON.parse(att.stack);
+          if (Array.isArray(parsed)) stackList = parsed.join(", ");
+          else stackList = att.stack;
+        } catch (_) {
+          stackList = att.stack;
+        }
+      }
+    }
+
+    participantsSheet.appendRow([
+      att.full_name || "Anonymous",
+      att.email || "—",
+      att.phone || "—",
+      att.college || "—",
+      att.venue || "—",
+      (att.team_name && !att.team_name.startsWith("Individual-")) ? att.team_name : "—",
+      role,
+      att.selected_track || "—",
+      stackList,
+      att.github_url || "—",
+      att.linkedin_url || "—",
+      att.created_at ? new Date(att.created_at).toLocaleDateString() : "—"
+    ]);
+  });
+
+  formatHeaderRow(participantsSheet);
   
   SpreadsheetApp.getUi().alert("✦ Starlet Sync Complete!\n\nAll spreadsheet pages have been updated with the latest live data from Supabase.");
 }
@@ -218,7 +277,7 @@ function getOrCreateSheet(ss, name) {
 
 // Styling helper for header rows
 function formatHeaderRow(sheet) {
-  const range = sheet.getRange("A1:I1");
+  const range = sheet.getRange(1, 1, 1, sheet.getLastColumn());
   range.setBackground("#001F3F"); // Navy
   range.setFontColor("#FFFFFF");  // White
   range.setFontWeight("bold");
