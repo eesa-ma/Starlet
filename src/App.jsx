@@ -423,6 +423,7 @@ function App() {
   const [visibleSections, setVisibleSections] = useState(new Set());
 
   const [user, setUser] = useState({
+    id: '',
     name: '',
     email: '',
     role: 'attendee', // attendee, mentor, admin
@@ -819,6 +820,8 @@ function App() {
   const [systemIssues, setSystemIssues] = useState([]);
   const [isInstalling, setIsInstalling] = useState(false);
   const [installComplete, setInstallComplete] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
   const [settings, setSettings] = useState({
     registration_open: 'true',
     certificates_released: 'false',
@@ -912,6 +915,15 @@ function App() {
         };
       }
     }
+
+    // Inject html5-qrcode library for camera QR scanner
+    if (typeof window !== 'undefined' && !window.Html5QrcodeScanner) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/html5-qrcode';
+      script.type = 'text/javascript';
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }, []);
 
   useEffect(() => {
@@ -989,6 +1001,88 @@ function App() {
       }, 3000);
     }
   };
+
+  const activeScannerRef = useRef(null);
+
+  const handleVerifyCheckin = async (userId) => {
+    try {
+      setScanResult({ success: true, message: 'Verifying with database...' });
+      
+      // 1. Fetch user to verify
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, is_approved')
+        .eq('id', userId)
+        .single();
+        
+      if (fetchError || !profile) {
+        setScanResult({ success: false, message: 'Verification Failed: User ID not found.' });
+        return;
+      }
+      
+      if (profile.is_approved) {
+        setScanResult({ success: true, message: `${profile.full_name} is already checked in!`, user: profile });
+        return;
+      }
+
+      // 2. Mark as checked in / approved
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_approved: true })
+        .eq('id', userId);
+        
+      if (updateError) {
+        setScanResult({ success: false, message: 'Database Update Failed: ' + updateError.message });
+        return;
+      }
+
+      // 3. Log the check-in event in audit logs
+      await supabase
+        .from('audit_logs')
+        .insert([{
+          action: 'Attendance Check-in (QR)',
+          details: { user_id: userId, name: profile.full_name, email: profile.email }
+        }]);
+        
+      setScanResult({ success: true, message: `Checked In: ${profile.full_name}!`, user: { ...profile, is_approved: true } });
+      
+      // 4. Reload local user state to sync with dashboard grids & sheets
+      fetchAllUsers();
+    } catch (e) {
+      console.error(e);
+      setScanResult({ success: false, message: 'Verification Error: ' + e.message });
+    }
+  };
+
+  useEffect(() => {
+    if (isScannerOpen) {
+      const timer = setTimeout(() => {
+        if (window.Html5QrcodeScanner) {
+          const scanner = new window.Html5QrcodeScanner(
+            "checkin-qr-reader", 
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            false
+          );
+          
+          scanner.render(
+            async (decodedText) => {
+              playNotificationSound();
+              await handleVerifyCheckin(decodedText);
+            },
+            (error) => {
+              // Ignore standard frame scan errors
+            }
+          );
+          
+          activeScannerRef.current = scanner;
+        } else {
+          setScanResult({ success: false, message: 'Camera Scanner Library not loaded yet. Please wait a second...' });
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isScannerOpen]);
 
   const [announcementInput, setAnnouncementInput] = useState('');
 
@@ -1349,6 +1443,33 @@ function App() {
     }
   }, [isLoggedIn, session?.user?.id]);
 
+  useEffect(() => {
+    if (!isLoggedIn || !session?.user?.id || user.role !== 'attendee') return;
+
+    const userChannel = supabase.channel(`user-profile-checkin-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
+        (payload) => {
+          console.log('Realtime profile update detected:', payload.new);
+          if (payload.new.is_approved && !payload.old.is_approved) {
+            playNotificationSound();
+            setActiveAlert({
+              id: Date.now(),
+              type: 'checkin_success',
+              message: 'Your morning attendance check-in has been verified by the desk volunteer!'
+            });
+            setUser(prev => ({ ...prev, isApproved: true }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(userChannel);
+    };
+  }, [isLoggedIn, session?.user?.id, user.role]);
+
   // URL Hash-based Routing for Sponsors Page (UIC Overview)
   useEffect(() => {
     const checkHashRoute = () => {
@@ -1419,6 +1540,7 @@ function App() {
 
       if (error && error.code === 'PGRST116') {
         setUser({
+          id: userId || '',
           name: 'No such user found!',
           email: '',
           role: 'attendee',
@@ -1444,6 +1566,7 @@ function App() {
         });
       } else if (data) {
         setUser({
+          id: data.id || '',
           name: data.full_name || '',
           email: data.email || '',
           role: data.user_role || 'attendee',
@@ -5562,6 +5685,22 @@ function App() {
                     <span>Active Requests</span>
                   </div>
                 </div>
+                <div
+                  className="admin-stat-card green"
+                  style={{ cursor: 'pointer', background: 'rgba(37, 211, 102, 0.1)', borderColor: '#25D366' }}
+                  onClick={() => setIsScannerOpen(true)}
+                >
+                  <div className="stat-icon">
+                    <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="var(--text-navy)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <path d="M7 7h2v2H7zm0 8h2v2H7zm8-8h2v2h-2zm0 8h2v2h-2z" />
+                    </svg>
+                  </div>
+                  <div className="stat-info">
+                    <strong>SCAN</strong>
+                    <span>QR Check-in</span>
+                  </div>
+                </div>
               </div>
 
               <div className="admin-actions-bar" style={{ marginBottom: '3rem' }}>
@@ -7541,6 +7680,26 @@ function App() {
                     )}
                   </div>
                 )}
+
+                {/* STARLET 5.0 PASS CARD */}
+                {user.id && (
+                  <div className="hacker-pass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--bg-cream)', border: '4px solid var(--text-navy)', borderRadius: '24px', boxShadow: '5px 5px 0px var(--text-navy)', textAlign: 'center' }}>
+                    <div className="handwritten" style={{ fontSize: '1.2rem', color: 'var(--pink-primary)', marginBottom: '0.5rem', fontWeight: 'bold' }}>Starlet 5.0 Pass</div>
+                    <div style={{ display: 'inline-block', padding: '0.8rem', background: '#fff', border: '3px solid var(--text-navy)', borderRadius: '16px', margin: '0.5rem 0' }}>
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=001f3f&bgcolor=ffffff&data=${encodeURIComponent(user.id)}`}
+                        alt="Check-in Pass QR"
+                        style={{ display: 'block', width: '150px', height: '150px' }}
+                      />
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-navy)' }}>
+                      {user.name?.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      ID: {user.id.substring(0, 8)}...
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="profile-info">
                 <div className="profile-field">
@@ -9451,21 +9610,35 @@ function App() {
       {activeAlert && (
         <div className="realtime-alert-overlay">
           <div className="realtime-alert-card">
-            <div className="alert-header">
-              {activeAlert.type === 'system_issue' ? 'NEW SYSTEM ISSUE' : 'NEW HELP REQUEST'}
+            <div className="alert-header" style={{ background: activeAlert.type === 'checkin_success' ? '#25D366' : undefined }}>
+              {activeAlert.type === 'system_issue' ? 'NEW SYSTEM ISSUE' : activeAlert.type === 'checkin_success' ? 'CHECK-IN VERIFIED' : 'NEW HELP REQUEST'}
             </div>
             <div className="alert-body">
-              <div className="alert-user-photo">
-                <img src={activeAlert.attendee?.avatar_url || 'icons/user-profile.svg'} alt="user" />
-              </div>
-              <div className="alert-content">
-                <h3>{activeAlert.attendee?.full_name || 'Attendee'}</h3>
-                <span className="alert-team-tag">{activeAlert.attendee?.team_name || 'Solo Hacker'}</span>
-                <p>"{activeAlert.message}"</p>
-              </div>
+              {activeAlert.type === 'checkin_success' ? (
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                  <div className="install-success-icon" style={{ display: 'inline-flex', width: '70px', height: '70px', background: 'rgba(37, 211, 102, 0.1)', border: '2.5px solid #25D366', borderRadius: '50%', justifyContent: 'center', alignItems: 'center', marginBottom: '1rem' }}>
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#25D366" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <h3 style={{ fontFamily: 'Fredoka One', color: 'var(--text-navy)', fontSize: '1.4rem', marginBottom: '0.5rem' }}>Welcome to Starlet 5.0!</h3>
+                  <p style={{ fontFamily: 'Outfit', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.4' }}>{activeAlert.message}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="alert-user-photo">
+                    <img src={activeAlert.attendee?.avatar_url || 'icons/user-profile.svg'} alt="user" />
+                  </div>
+                  <div className="alert-content">
+                    <h3>{activeAlert.attendee?.full_name || 'Attendee'}</h3>
+                    <span className="alert-team-tag">{activeAlert.attendee?.team_name || 'Solo Hacker'}</span>
+                    <p>"{activeAlert.message}"</p>
+                  </div>
+                </>
+              )}
             </div>
             <div className="alert-footer">
-              {activeAlert.type === 'system_issue' ? (
+              {activeAlert.type === 'system_issue' || activeAlert.type === 'checkin_success' ? (
                 <button className="join-btn" style={{ width: '100%' }} onClick={() => setActiveAlert(null)}>
                   ACKNOWLEDGE
                 </button>
@@ -10026,6 +10199,52 @@ function App() {
             </div>
             <h3>Installation Complete!</h3>
             <p>Starlet 5.0 has been successfully added to your device. Redirecting to home...</p>
+          </div>
+        </div>
+      )}
+
+      {/* QR CHECK-IN SCANNER MODAL */}
+      {isScannerOpen && (
+        <div className="install-loading-overlay">
+          <div className="install-loading-card" style={{ maxWidth: '480px', padding: '2rem' }}>
+            <h3 style={{ fontFamily: 'Fredoka One', color: 'var(--text-navy)', fontSize: '1.6rem', marginBottom: '0.5rem' }}>Registration Check-in</h3>
+            <p style={{ fontFamily: 'Outfit', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+              Scan an attendee's QR Pass to verify their morning presence and update their hackathon status.
+            </p>
+            
+            <div id="checkin-qr-reader" style={{ width: '100%', borderRadius: '15px', overflow: 'hidden', border: '3.5px solid var(--text-navy)', background: '#fff' }}></div>
+            
+            {scanResult && (
+              <div style={{ marginTop: '1.5rem', padding: '1rem', background: scanResult.success ? 'rgba(37, 211, 102, 0.1)' : 'rgba(229, 62, 98, 0.1)', border: `2.5px solid ${scanResult.success ? '#25D366' : '#e53e3e'}`, borderRadius: '14px', textAlign: 'left' }}>
+                <strong style={{ color: 'var(--text-navy)', fontSize: '0.95rem', display: 'block' }}>
+                  {scanResult.message}
+                </strong>
+                {scanResult.user && (
+                  <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    {scanResult.user.email} | Status: {scanResult.user.is_approved ? 'Present' : 'Absent'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              className="join-btn"
+              style={{ width: '100%', marginTop: '1.5rem', background: '#e53e3e', borderColor: '#e53e3e', boxShadow: 'none' }}
+              onClick={async () => {
+                if (activeScannerRef.current) {
+                  try {
+                    await activeScannerRef.current.clear();
+                  } catch (err) {
+                    console.error('Clear scanner error:', err);
+                  }
+                  activeScannerRef.current = null;
+                }
+                setIsScannerOpen(false);
+                setScanResult(null);
+              }}
+            >
+              CLOSE SCANNER
+            </button>
           </div>
         </div>
       )}
