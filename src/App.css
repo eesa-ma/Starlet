@@ -2606,6 +2606,29 @@ footer {
     text-align: center;
 }
 
+.profile-header-top-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.profile-header-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.profile-badges-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
 .profile-avatar {
     width: 200px;
     height: 200px;
@@ -2682,6 +2705,59 @@ footer {
     .profile-info {
         padding: 1.5rem;
         box-shadow: 8px 8px 0px var(--pink-primary);
+    }
+
+    .profile-header-top-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        text-align: left !important;
+        width: 100% !important;
+        gap: 1.25rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .profile-avatar {
+        width: 100px !important;
+        height: 100px !important;
+        margin: 0 !important;
+        box-shadow: 6px 6px 0px var(--blue-shadow) !important;
+        border-radius: 20px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .profile-header-details {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        flex: 1 !important;
+        width: auto !important;
+    }
+
+    .profile-header-details h2.text-3d {
+        margin: 0 0 0.5rem 0 !important;
+        text-align: left !important;
+        font-size: 1.6rem !important;
+    }
+
+    .profile-badges-row {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        margin-top: 0 !important;
+        width: 100% !important;
+    }
+
+    .profile-badges-row .status-badge,
+    .profile-badges-row .vlogs-count-badge {
+        margin: 0 !important;
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.75rem !important;
+        line-height: 1.2 !important;
     }
 }
 

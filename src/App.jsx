@@ -6726,28 +6726,34 @@ function App() {
             /* MENTOR PROFILE VIEW */
             <>
               <div className="profile-sidebar">
-                <div className="profile-avatar" style={{ position: 'relative' }}>
-                  <img
-                    src={user.avatarUrl || 'icons/user-profile.svg'}
-                    alt="avatar"
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                  />
-                  <label className="upload-overlay" title="Change photo">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleAvatarUpload}
+                <div className="profile-header-top-row">
+                  <div className="profile-avatar" style={{ position: 'relative' }}>
+                    <img
+                      src={user.avatarUrl || 'icons/user-profile.svg'}
+                      alt="avatar"
+                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                     />
-                    ✎
-                  </label>
-                </div>
-                <h2 className="text-3d">{user.name}</h2>
-                <div className={`status-badge ${user.isApproved ? 'approved' : 'pending'}`}>
-                  {user.isApproved ? 'VERIFIED MENTOR' : 'AWAITING APPROVAL'}
-                </div>
-                <div className="vlogs-count-badge" style={{ marginTop: '0.8rem' }}>
-                  📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post / Vlog' : 'Posts / Vlogs'}
+                    <label className="upload-overlay" title="Change photo">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleAvatarUpload}
+                      />
+                      ✎
+                    </label>
+                  </div>
+                  <div className="profile-header-details">
+                    <h2 className="text-3d">{user.name}</h2>
+                    <div className="profile-badges-row">
+                      <div className={`status-badge ${user.isApproved ? 'approved' : 'pending'}`}>
+                        {user.isApproved ? 'VERIFIED MENTOR' : 'AWAITING APPROVAL'}
+                      </div>
+                      <div className="vlogs-count-badge">
+                        📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post' : 'Posts'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="profile-field" style={{ marginTop: '2rem' }}>
@@ -7170,25 +7176,31 @@ function App() {
             /* EXISTING ATTENDEE PROFILE VIEW */
             <>
               <div className="profile-sidebar">
-                <div className="profile-avatar" style={{ position: 'relative' }}>
-                  <img
-                    src={user.avatarUrl || 'icons/user-profile.svg'}
-                    alt="avatar"
-                    style={{ objectFit: user.avatarUrl ? 'cover' : 'contain', borderRadius: '50%', width: '100%', height: '100%' }}
-                  />
-                  <label className="upload-overlay" title="Change photo">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleAvatarUpload}
+                <div className="profile-header-top-row">
+                  <div className="profile-avatar" style={{ position: 'relative' }}>
+                    <img
+                      src={user.avatarUrl || 'icons/user-profile.svg'}
+                      alt="avatar"
+                      style={{ objectFit: user.avatarUrl ? 'cover' : 'contain', borderRadius: '50%', width: '100%', height: '100%' }}
                     />
-                    ✎
-                  </label>
-                </div>
-                <h2 className="text-3d">{user.name}</h2>
-                <div className="vlogs-count-badge" style={{ marginTop: '0.5rem' }}>
-                  📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post / Vlog' : 'Posts / Vlogs'}
+                    <label className="upload-overlay" title="Change photo">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleAvatarUpload}
+                      />
+                      ✎
+                    </label>
+                  </div>
+                  <div className="profile-header-details">
+                    <h2 className="text-3d">{user.name}</h2>
+                    <div className="profile-badges-row">
+                      <div className="vlogs-count-badge">
+                        📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post' : 'Posts'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="profile-field" style={{ marginTop: '2rem' }}>
                   <label>Hacker Bio</label>
@@ -8306,20 +8318,25 @@ function App() {
       ) : activeView === 'profile-view' ? (
         <div className="profile-container" style={{ paddingTop: '120px' }}>
           <div className="profile-sidebar">
-            <div className="profile-avatar">
-              <img
-                src={viewProfileUser.avatarUrl || 'icons/user-profile.svg'}
-                alt="avatar"
-                style={{ objectFit: viewProfileUser.avatarUrl ? 'cover' : 'contain', borderRadius: '50%', width: '100%', height: '100%' }}
-              />
-            </div>
-            <h2 className="text-3d">{viewProfileUser.name}</h2>
-            <div className={`status-badge ${viewProfileUser.role}`}>
-              {viewProfileUser.role.toUpperCase()}
-            </div>
-
-            <div className="vlogs-count-badge" style={{ marginTop: '1rem' }}>
-              📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post / Vlog' : 'Posts / Vlogs'}
+            <div className="profile-header-top-row">
+              <div className="profile-avatar">
+                <img
+                  src={viewProfileUser.avatarUrl || 'icons/user-profile.svg'}
+                  alt="avatar"
+                  style={{ objectFit: viewProfileUser.avatarUrl ? 'cover' : 'contain', borderRadius: '50%', width: '100%', height: '100%' }}
+                />
+              </div>
+              <div className="profile-header-details">
+                <h2 className="text-3d">{viewProfileUser.name}</h2>
+                <div className="profile-badges-row">
+                  <div className={`status-badge ${viewProfileUser.role}`}>
+                    {viewProfileUser.role.toUpperCase()}
+                  </div>
+                  <div className="vlogs-count-badge">
+                    📷 {userProfilePosts.length} {userProfilePosts.length === 1 ? 'Post' : 'Posts'}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {viewProfileUser.bio && (
