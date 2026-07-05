@@ -8048,21 +8048,89 @@ input:checked + .a11y-slider:before {
 
 /* Empty placeholder */
 .empty-blog-placeholder {
+    position: relative;
     text-align: center;
-    padding: 4rem 2rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 3px dashed var(--blue-shadow);
-    border-radius: 20px;
+    padding: 5rem 2rem;
+    background: rgba(255, 255, 255, 0.6); /* Translucent White for high contrast */
+    border: 2px solid rgba(0, 51, 102, 0.15); /* Soft navy border */
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 51, 102, 0.08); /* Dark navy shadow */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    max-width: 600px;
+    margin: 2rem auto;
+    overflow: hidden;
 }
 
-.empty-blog-placeholder h2 {
+.empty-blog-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 42, 122, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.empty-blog-illustration {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.empty-blog-icon {
+    filter: drop-shadow(0 4px 10px rgba(255, 42, 122, 0.3));
+    animation: iconPulse 3s infinite ease-in-out;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.05);
+    }
+}
+
+.empty-blog-title {
+    position: relative;
+    z-index: 1;
     font-family: 'Fredoka One', cursive;
-    color: #fff;
+    color: var(--text-navy) !important; /* High Legibility Navy */
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    letter-spacing: 0.5px;
 }
 
-.empty-blog-placeholder p {
-    color: #eee;
-    margin-top: 0.5rem;
+.empty-blog-description {
+    position: relative;
+    z-index: 1;
+    color: #2b3a67 !important; /* Highly visible dark navy */
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto 2rem auto;
+}
+
+.empty-blog-action-btn {
+    position: relative;
+    z-index: 1;
+    padding: 0.8rem 2rem !important;
+    font-size: 1rem !important;
+    border-radius: 14px !important;
+    font-family: 'Fredoka One', cursive !important;
+    box-shadow: 0 4px 12px rgba(255, 42, 122, 0.2) !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+}
+
+.empty-blog-action-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(255, 42, 122, 0.4) !important;
 }
 
 /* Styled Upload Form Inputs */

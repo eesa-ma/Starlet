@@ -817,12 +817,14 @@ function App() {
   const [needsTeaming, setNeedsTeaming] = useState(false);
   const [activeAlert, setActiveAlert] = useState(null);
   const [systemIssues, setSystemIssues] = useState([]);
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [installComplete, setInstallComplete] = useState(false);
   const [settings, setSettings] = useState({
     registration_open: 'true',
     certificates_released: 'false',
     event_announcement: '',
     google_drive_link: '',
-    project_submission_open: 'true',
+    project_submission_open: 'false',
     winner_1st_email: '',
     winner_2nd_email: '',
     winner_3rd_email: '',
@@ -944,22 +946,48 @@ function App() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       setInstallPrompt(null);
+      setIsInstalling(false);
+      setInstallComplete(true);
       console.log('Starlet PWA was installed successfully');
-    });
+      
+      setTimeout(() => {
+        setInstallComplete(false);
+        setActiveView('landing');
+      }, 2500);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    console.log(`User response to install prompt: ${outcome}`);
-    setInstallPrompt(null);
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      console.log(`User response to install prompt: ${outcome}`);
+      if (outcome === 'accepted') {
+        setIsInstalling(true);
+      } else {
+        setInstallPrompt(null);
+      }
+    } else {
+      // Universal fallback for iOS Safari, Firefox, and other search engines
+      setIsInstalling(true);
+      setTimeout(() => {
+        setIsInstalling(false);
+        setInstallComplete(true);
+        setTimeout(() => {
+          setInstallComplete(false);
+          navigateToLanding();
+        }, 2500);
+      }, 3000);
+    }
   };
 
   const [announcementInput, setAnnouncementInput] = useState('');
@@ -1054,6 +1082,20 @@ function App() {
     } else {
       setTimeout(performScroll, 100);
     }
+  };
+
+  const navigateToLanding = (e) => {
+    if (e) e.preventDefault();
+    setIsMenuOpen(false);
+    setActiveView('landing');
+    
+    if (window.location.hash) {
+      window.history.pushState("", document.title, window.location.pathname + window.location.search);
+    }
+    
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }, 100);
   };
 
   const renderPagination = (currentPage, totalItems, itemsPerPage, onPageChange) => {
@@ -2567,6 +2609,21 @@ function App() {
     }
   };
 
+  const clearAnnouncementHistory = async () => {
+    if (!window.confirm("Are you sure you want to clear the announcement history?")) return;
+    const { error } = await supabase
+      .from('audit_logs')
+      .delete()
+      .eq('action', 'Updated Setting: event_announcement');
+
+    if (error) {
+      alert("Error clearing history: " + error.message);
+    } else {
+      setAnnouncementHistory([]);
+      alert("Announcement history cleared successfully!");
+    }
+  };
+
   const handleRequestMentor = async (mentorId) => {
     const { error } = await supabase
       .from('mentor_requests')
@@ -4057,7 +4114,7 @@ function App() {
                   </iframe>
                 ) : (
                   <>
-                    <div style={{ fontSize: '4rem', margin: '1rem 0' }}>🔒</div>
+                    <div style={{ margin: '1rem 0' }}><img src="svg/emoji/lock.svg" style={{ width: '64px', height: '64px' }} alt="Locked" /></div>
                     <h3 className="text-3d" style={{ fontSize: '2rem', color: 'var(--text-navy)', marginBottom: '0.5rem' }}>Registrations Closed</h3>
                     <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto', lineHeight: '1.5' }}>
                       Public registrations for Starlet 5.0 are currently closed. If you have already registered, you can still sign up to create your account!
@@ -4099,7 +4156,7 @@ function App() {
         {settings.event_announcement && !isBannerDismissed && (
           <div className="live-announcement-banner">
             <div className="banner-content">
-              <span className="banner-icon">📢</span>
+              <span className="banner-icon"><img src="svg/emoji/announcement.svg" className="emoji-icon" alt="Announcement" /></span>
               <div className="banner-text-wrapper">
                 <span className="banner-badge">ANNOUNCEMENT</span>
                 <span className="banner-text">{settings.event_announcement}</span>
@@ -4154,10 +4211,10 @@ function App() {
 
         <header className={activeView !== 'landing' && activeView !== 'sponsors-overview' && activeView !== 'profile' && activeView !== 'audit-logs' && activeView !== 'blog' && activeView !== 'profile-view' && activeView !== 'venue' ? 'header-minimal' : ''}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <div className="logo-circle" onClick={() => setActiveView('landing')} style={{ cursor: 'pointer' }}>
+            <div className="logo-circle" onClick={navigateToLanding} style={{ cursor: 'pointer' }}>
               <img src="brand/Logo.png" alt="Starlet Logo" />
             </div>
-            <span className="logo-text" onClick={() => setActiveView('landing')}>
+            <span className="logo-text" onClick={navigateToLanding}>
               Starlet
             </span>
           </div>
@@ -4241,7 +4298,7 @@ function App() {
               <div className="header-actions">
                 <div
                   className="nav-btn-round"
-                  onClick={() => setActiveView('landing')}
+                  onClick={navigateToLanding}
                   title="Back to Home"
                 >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4295,7 +4352,7 @@ function App() {
 
                   <div
                     className="nav-btn-round"
-                    onClick={() => setActiveView('landing')}
+                    onClick={navigateToLanding}
                     title="Back to Home"
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4452,7 +4509,7 @@ function App() {
                                   </div>
                                   <div className="timeline-event" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(0,0,0,0.15)', paddingBottom: '0.4rem', gap: '1.5rem' }}>
                                     <strong style={{ minWidth: '150px', color: 'var(--pink-primary)', textAlign: 'left' }}>9:30am onwards</strong>
-                                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 'bold' }}>Hackathon Begins 🚀</span>
+                                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 'bold' }}>Hackathon Begins <img src="svg/emoji/rocket.svg" className="emoji-icon" alt="Begins" /></span>
                                   </div>
                                   <div className="timeline-event" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(0,0,0,0.15)', paddingBottom: '0.4rem', gap: '1.5rem' }}>
                                     <strong style={{ minWidth: '150px', color: 'var(--text-navy)', textAlign: 'left' }}>11:00 AM</strong>
@@ -4499,7 +4556,7 @@ function App() {
                                   </div>
                                   <div className="timeline-event" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(0,0,0,0.15)', paddingBottom: '0.4rem', gap: '1.5rem' }}>
                                     <strong style={{ minWidth: '150px', color: 'var(--pink-primary)', textAlign: 'left' }}>1:00 PM</strong>
-                                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 'bold' }}>Deadline for uploading demo link on the website ⏰</span>
+                                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 'bold' }}>Deadline for uploading demo link on the website <img src="svg/emoji/warning.svg" className="emoji-icon" alt="Warning" /></span>
                                   </div>
                                   <div className="timeline-event" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(0,0,0,0.15)', paddingBottom: '0.4rem', gap: '1.5rem' }}>
                                     <strong style={{ minWidth: '150px', color: 'var(--text-navy)', textAlign: 'left' }}>1:05 PM</strong>
@@ -4519,7 +4576,7 @@ function App() {
                                   </div>
                                   <div className="timeline-event" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(0,0,0,0.15)', paddingBottom: '0.4rem', gap: '1.5rem' }}>
                                     <strong style={{ minWidth: '150px', color: 'var(--pink-primary)', textAlign: 'left' }}>4:30 PM</strong>
-                                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 'bold' }}>Prize Distribution 🎁</span>
+                                    <span style={{ flex: 1, textAlign: 'left', fontWeight: 'bold' }}>Prize Distribution <img src="svg/emoji/prize.svg" className="emoji-icon" alt="Prize" /></span>
                                   </div>
                                   <div className="timeline-event" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(0,0,0,0.15)', paddingBottom: '0.4rem', gap: '1.5rem' }}>
                                     <strong style={{ minWidth: '150px', color: 'var(--text-navy)', textAlign: 'left' }}>5:00 PM</strong>
@@ -5390,7 +5447,7 @@ function App() {
                 {activeView === 'login' ? 'Sign up here' : 'Login here'}
               </span>
             </p>
-            <div className="admin-back-link" onClick={() => setActiveView('landing')} style={{ marginTop: '1.5rem' }}>← Back to Home</div>
+            <div className="admin-back-link" onClick={navigateToLanding} style={{ marginTop: '1.5rem' }}>← Back to Home</div>
           </div>
         </div>
       ) : activeView === 'forgot-password' ? (
@@ -5544,12 +5601,12 @@ function App() {
                         </button>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>Project Submissions</span>
+                        <span>Start / Stop Submission</span>
                         <button
                           className={`btn-small ${settings.project_submission_open === 'true' ? 'accept' : 'decline'}`}
                           onClick={() => updateSetting('project_submission_open', settings.project_submission_open === 'true' ? 'false' : 'true')}
                         >
-                          {settings.project_submission_open === 'true' ? 'ENABLED' : 'DISABLED'}
+                          {settings.project_submission_open === 'true' ? 'STOP SUBMISSIONS' : 'START SUBMISSIONS'}
                         </button>
                       </div>
                     </div>
@@ -5558,7 +5615,14 @@ function App() {
                     <h3>Live Announcement</h3>
                     <div style={{ marginTop: '1rem' }}>
                       <textarea
-                        style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                        style={{ 
+                          width: '100%', 
+                          padding: '1rem', 
+                          borderRadius: '8px', 
+                          border: '1px solid #ddd',
+                          overflowY: 'hidden',
+                          resize: 'vertical'
+                        }}
                         value={announcementInput}
                         onChange={(e) => setAnnouncementInput(e.target.value)}
                         placeholder="Type a message for the landing page banner..."
@@ -5574,8 +5638,25 @@ function App() {
 
                     {/* Announcement History Section */}
                     <div className="announcement-history-container">
-                      <h4 className="announcement-history-title">
-                        <span>⏳</span> Announcement History
+                      <h4 className="announcement-history-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span><img src="svg/emoji/pending.svg" className="emoji-icon" alt="History" /> Announcement History</span>
+                        {announcementHistory.length > 0 && (
+                          <button
+                            onClick={clearAnnouncementHistory}
+                            className="btn-small decline"
+                            style={{ 
+                              padding: '0.2rem 0.5rem', 
+                              fontSize: '0.75rem', 
+                              cursor: 'pointer',
+                              border: '2px solid var(--text-navy)',
+                              boxShadow: '2px 2px 0px var(--text-navy)',
+                              borderRadius: '8px',
+                              fontFamily: "'Fredoka One', cursive"
+                            }}
+                          >
+                            CLEAR HISTORY
+                          </button>
+                        )}
                       </h4>
                       {announcementHistory.length === 0 ? (
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', margin: '1rem 0' }}>
@@ -5587,7 +5668,7 @@ function App() {
                             <div key={log.id} className="announcement-history-item">
                               <div className="announcement-history-meta">
                                 <span className="announcement-history-admin">
-                                  👤 {log.profiles?.full_name || 'Admin'}
+                                  <img src="svg/emoji/user.svg" className="emoji-icon" alt="Admin" /> {log.profiles?.full_name || 'Admin'}
                                 </span>
                                 <span>
                                   {new Date(log.created_at).toLocaleString()}
@@ -7495,7 +7576,7 @@ function App() {
                           cursor: 'pointer'
                         }}
                       >
-                        📂 Open Shared Google Drive Folder
+                        <img src="svg/emoji/folder.svg" className="emoji-icon" alt="Folder" /> Open Shared Google Drive Folder
                       </a>
                     </div>
                   </div>
@@ -7611,7 +7692,7 @@ function App() {
                         <strong style={{ color: 'var(--text-navy)' }}>
                           {problemStatements.find(ps => ps.id === user.problemStatementId)?.title || 'Selected'}
                         </strong>
-                        <small style={{ color: 'var(--text-muted)', fontSize: '14px' }}>🔒 Selection Locked (Contact admin to change)</small>
+                        <small style={{ color: 'var(--text-muted)', fontSize: '14px' }}><img src="svg/emoji/lock.svg" className="emoji-icon" alt="Locked" /> Selection Locked (Contact admin to change)</small>
                       </div>
                     ) : (
                       <>
@@ -7724,7 +7805,7 @@ function App() {
                         }}
                         onClick={() => setActiveView('certificate')}
                       >
-                        🎓 CLAIM ACHIEVEMENT CERTIFICATE
+                        <img src="svg/emoji/certificate.svg" className="emoji-icon" alt="Certificate" /> CLAIM ACHIEVEMENT CERTIFICATE
                       </div>
                     )}
                     {settings.certificates_released === 'true' && user.isApproved && isWinner && (
@@ -7739,7 +7820,7 @@ function App() {
                         }}
                         onClick={() => alert("As an award winner, you are eligible for a special category certificate instead of a participation certificate. Please contact the organizers.")}
                       >
-                        🎓 SPECIAL CERTIFICATE (CONTACT ADMIN)
+                        <img src="svg/emoji/certificate.svg" className="emoji-icon" alt="Certificate" /> SPECIAL CERTIFICATE (CONTACT ADMIN)
                       </div>
                     )}
                   </div>
@@ -7750,7 +7831,7 @@ function App() {
                   <h3 className="text-3d" style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Project Submission</h3>
                   {mySubmission ? (
                     <div className="submission-success" style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
+                      <div style={{ marginBottom: '1rem' }}><img src="svg/emoji/rocket.svg" style={{ width: '48px', height: '48px' }} alt="Submitted" /></div>
                       <h3>Project Submitted!</h3>
                       <p>Your team's project <strong>"{mySubmission.project_name}"</strong> has been received.</p>
                       {submitterName && (
@@ -7804,19 +7885,33 @@ function App() {
                         <label style={{ color: 'var(--text-navy)', fontWeight: 'bold' }}>Brief Description (min 100 words)</label>
                         <textarea name="description" placeholder="Tell us what you built and how it helps..." required style={{ width: '100%', minHeight: '100px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}></textarea>
                       </div>
-                      <button
-                        type="submit"
-                        className={`join-btn ${settings.project_submission_open !== 'true' ? 'disabled' : ''}`}
-                        style={{
-                          width: '100%',
-                          marginTop: '1.5rem',
-                          opacity: settings.project_submission_open !== 'true' ? 0.6 : 1,
-                          cursor: settings.project_submission_open !== 'true' ? 'not-allowed' : 'pointer'
-                        }}
-                        disabled={settings.project_submission_open !== 'true'}
-                      >
-                        {settings.project_submission_open === 'true' ? 'SUBMIT FINAL PROJECT' : 'SUBMISSION CLOSED BY ADMIN'}
-                      </button>
+                      {settings.project_submission_open === 'true' ? (
+                        <button
+                          type="submit"
+                          className="join-btn"
+                          style={{
+                            width: '100%',
+                            marginTop: '1.5rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          SUBMIT FINAL PROJECT
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="join-btn disabled"
+                          style={{
+                            width: '100%',
+                            marginTop: '1.5rem',
+                            cursor: 'not-allowed',
+                            opacity: 0.6
+                          }}
+                          disabled
+                        >
+                          SUBMISSION CLOSED
+                        </button>
+                      )}
                     </form>
                   )}
                 </div>
@@ -8092,7 +8187,7 @@ function App() {
             )}
           </div>
 
-          <div onClick={() => setActiveView('landing')} style={{ marginTop: '3rem', cursor: 'pointer', color: 'var(--blue-shadow)', textAlign: 'center', width: '100%' }}>← Back to Home</div>
+          <div onClick={navigateToLanding} style={{ marginTop: '3rem', cursor: 'pointer', color: 'var(--blue-shadow)', textAlign: 'center', width: '100%' }}>← Back to Home</div>
         </div>
       ) : activeView === 'audit-logs' ? (
         <div className="admin-page-wrapper" style={{ padding: '2rem' }}>
@@ -8204,11 +8299,29 @@ function App() {
                 <BlogPostSkeleton count={3} />
               ) : blogPosts.length === 0 ? (
                 <div className="empty-blog-placeholder">
-                  <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="var(--yellow-star)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}>
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                  </svg>
-                  <h2>No Posts Yet</h2>
-                  <p>Be the first one to share a highlight from the event!</p>
+                  <div className="empty-blog-glow"></div>
+                  <div className="empty-blog-illustration">
+                    <svg viewBox="0 0 24 24" width="80" height="80" fill="none" stroke="url(#blogIconGrad)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="empty-blog-icon">
+                      <defs>
+                        <linearGradient id="blogIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="var(--pink-primary)" />
+                          <stop offset="100%" stopColor="var(--yellow-primary)" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                  </div>
+                  <h2 className="empty-blog-title">No Posts Yet</h2>
+                  <p className="empty-blog-description">Be the first to share a highlight or progress update from the event!</p>
+                  {isLoggedIn && !checkIsAfter13th() && (
+                    <button
+                      className="btn-small accept empty-blog-action-btn"
+                      onClick={() => setIsUploadModalOpen(true)}
+                    >
+                      SHARE A POST
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="blog-posts-list">
@@ -9845,6 +9958,31 @@ function App() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* PWA Install Spinner Loader Overlays */}
+      {isInstalling && (
+        <div className="install-loading-overlay">
+          <div className="install-loading-card">
+            <div className="install-spinner"></div>
+            <h3>Installing Starlet 5.0</h3>
+            <p>Setting up offline assets and secure database connections. Please wait...</p>
+          </div>
+        </div>
+      )}
+
+      {installComplete && (
+        <div className="install-loading-overlay">
+          <div className="install-loading-card">
+            <div className="install-success-icon">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#25D366" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3>Installation Complete!</h3>
+            <p>Starlet 5.0 has been successfully added to your device. Redirecting to home...</p>
+          </div>
         </div>
       )}
     </div>
