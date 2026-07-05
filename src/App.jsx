@@ -7572,7 +7572,7 @@ function App() {
           className="certificate-view-screen"
           style={{
             minHeight: '100vh',
-            padding: '2rem',
+            padding: '120px 2rem 2rem 2rem',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center'
