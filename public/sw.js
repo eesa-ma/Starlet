@@ -89,3 +89,29 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Real-time Push Protocol Broadcasts
+self.addEventListener('push', (event) => {
+  let data = { title: 'Starlet 5.0 Broadcast', body: 'New live alert!' };
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'Starlet 5.0 Broadcast', body: event.data.text() };
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: '/brand/pwa-icon-192.png',
+    badge: '/brand/favicon.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url || '/'
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});

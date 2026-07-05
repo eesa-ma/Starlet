@@ -5634,6 +5634,9 @@ function App() {
                       >
                         UPDATE LIVE BANNER
                       </button>
+                      <small style={{ display: 'block', marginTop: '0.6rem', color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', lineHeight: '1.4' }}>
+                        <img src="svg/emoji/announcement.svg" className="emoji-icon" alt="Broadcast" /> This will instantly update the landing page banner and trigger push notifications for all subscribed attendees.
+                      </small>
                     </div>
 
                     {/* Announcement History Section */}
@@ -7497,6 +7500,45 @@ function App() {
                     SAVE CHANGES
                   </button>
                 </div>
+
+                {/* PWA Broadcast Alerts Card */}
+                {typeof window !== 'undefined' && 'Notification' in window && (
+                  <div className="pwa-alerts-card" style={{ marginTop: '1.5rem', padding: '1.2rem', background: 'rgba(0, 31, 63, 0.04)', border: '2px solid var(--text-navy)', borderRadius: '15px', textDecoration: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.6rem' }}>
+                      <img src="svg/emoji/announcement.svg" className="emoji-icon" alt="Alerts" style={{ width: '20px', height: '20px', margin: 0 }} />
+                      <strong style={{ color: 'var(--text-navy)', fontSize: '0.95rem' }}>Live Event Broadcasts</strong>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 1rem 0', lineHeight: '1.4', textAlign: 'left' }}>
+                      Enable push notifications to receive instant updates on hacking deadlines, food releases, and track announcements.
+                    </p>
+                    {Notification.permission === 'granted' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#25D366', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                        <img src="svg/emoji/check.svg" className="emoji-icon" alt="Active" style={{ width: '16px', height: '16px', margin: 0 }} />
+                        Real-time Alerts Active
+                      </div>
+                    ) : (
+                      <button
+                        className="btn-small accept"
+                        style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem' }}
+                        onClick={async () => {
+                          const permission = await Notification.requestPermission();
+                          if (permission === 'granted') {
+                            setA11ySettings(prev => ({ ...prev, systemNotifications: true }));
+                            showSystemNotification(
+                              'Notifications Enabled!',
+                              'You will now receive real-time updates and alerts for Starlet 5.0.',
+                              'starlet-welcome'
+                            );
+                          } else {
+                            alert('Please enable notification permissions in your browser settings to receive live updates.');
+                          }
+                        }}
+                      >
+                        ENABLE LIVE ALERTS
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="profile-info">
                 <div className="profile-field">
