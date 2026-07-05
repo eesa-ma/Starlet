@@ -818,9 +818,6 @@ function App() {
   const [needsTeaming, setNeedsTeaming] = useState(false);
   const [activeAlert, setActiveAlert] = useState(null);
   const [systemIssues, setSystemIssues] = useState([]);
-  const [isInstalling, setIsInstalling] = useState(false);
-  const [installComplete, setInstallComplete] = useState(false);
-  const [installProgress, setInstallProgress] = useState(0);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [settings, setSettings] = useState({
@@ -973,42 +970,12 @@ function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    const runUnifiedProgressLoader = () => {
-      setIsInstalling(true);
-      setInstallProgress(0);
-      
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 4) + 1;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          
-          setTimeout(() => {
-            setIsInstalling(false);
-            setInstallComplete(true);
-            setTimeout(() => {
-              setInstallComplete(false);
-              navigateToLanding();
-            }, 2500);
-          }, 600);
-        }
-        setInstallProgress(progress);
-      }, 150);
-    };
-
     if (installPrompt) {
       installPrompt.prompt();
       const { outcome } = await installPrompt.userChoice;
       console.log(`User response to install prompt: ${outcome}`);
-      if (outcome === 'accepted') {
-        runUnifiedProgressLoader();
-      } else {
-        setInstallPrompt(null);
-      }
-    } else {
-      // Universal fallback for iOS Safari, Firefox, and other search engines
-      runUnifiedProgressLoader();
+      setInstallPrompt(null);
+      setShowInstallBanner(false);
     }
   };
 
@@ -10214,38 +10181,6 @@ function App() {
         </div>
       )}
 
-      {/* PWA Install Spinner Loader Overlays */}
-      {isInstalling && (
-        <div className="install-loading-overlay">
-          <div className="install-loading-card">
-            <div className="install-spinner-container">
-              <div className="install-spinner"></div>
-              <div className="install-progress-text">{installProgress}%</div>
-            </div>
-            <h3>Installing Starlet 5.0</h3>
-            <p>Setting up offline assets and secure database connections. Please wait...</p>
-            
-            {/* Progress Bar */}
-            <div className="install-progress-bar-wrapper">
-              <div className="install-progress-bar-fill" style={{ width: `${installProgress}%` }}></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {installComplete && (
-        <div className="install-loading-overlay">
-          <div className="install-loading-card">
-            <div className="install-success-icon">
-              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#25D366" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-            <h3>Installation Complete!</h3>
-            <p>Starlet 5.0 has been successfully added to your device. Redirecting to home...</p>
-          </div>
-        </div>
-      )}
 
       {/* QR CHECK-IN SCANNER MODAL */}
       {isScannerOpen && (
