@@ -33,18 +33,50 @@ function syncAllFromSupabase() {
     "headers": headers,
     "muteHttpExceptions": true
   };
+
+  // Fetch attendees profiles (used for attendance, team names, and finding leaders)
+  const attResponse = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/profiles?user_role=eq.attendee&select=*", options);
+  let attendees = [];
+  if (attResponse.getResponseCode() === 200) {
+    attendees = JSON.parse(attResponse.getContentText());
+  } else {
+    SpreadsheetApp.getUi().alert("Error fetching attendees profiles from Supabase. Code: " + attResponse.getResponseCode());
+    return;
+  }
+  
+  // Extract all unique registered teams and locate their leaders
+  const teamLeaders = {};
+  attendees.forEach(m => {
+    if (m.team_name && !m.team_name.startsWith("Individual-")) {
+      if (!teamLeaders[m.team_name]) {
+        teamLeaders[m.team_name] = "No Leader Assigned";
+      }
+      if (m.is_team_leader) {
+        teamLeaders[m.team_name] = m.full_name || "Anonymous Leader";
+      }
+    }
+  });
   
   // ==========================================
-  // 1. SYNC SUBMISSIONS
+  // 1. SYNC SUBMISSIONS (Lists all teams & shows submission status)
   // ==========================================
   const subResponse = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/project_submissions?select=*", options);
   if (subResponse.getResponseCode() === 200) {
     const submissions = JSON.parse(subResponse.getContentText());
     
+    // Map submissions by team_name for fast lookup
+    const submissionMap = {};
+    submissions.forEach(sub => {
+      if (sub.team_name) {
+        submissionMap[sub.team_name] = sub;
+      }
+    });
+    
     // Clear and set headers
     submissionsSheet.clear();
     submissionsSheet.appendRow([
       "Team Name", 
+      "Team Leader Name",
       "Project Name", 
       "Project Description",
       "Video & PPT Link (Google Drive)", 
@@ -54,18 +86,38 @@ function syncAllFromSupabase() {
       "Submission Time"
     ]);
     
-    // Write data rows
-    submissions.forEach(sub => {
-      submissionsSheet.appendRow([
-        sub.team_name,
-        sub.project_name,
-        sub.description || "—",
-        sub.demo_url,
-        sub.github_url,
-        sub.ai_percentage !== null ? sub.ai_percentage + "%" : "—",
-        sub.git_audit_status ? sub.git_audit_status.toUpperCase() : "PENDING",
-        sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : "—"
-      ]);
+    // List all unique registered teams
+    Object.keys(teamLeaders).sort().forEach(teamName => {
+      const leaderName = teamLeaders[teamName];
+      const sub = submissionMap[teamName];
+      
+      if (sub) {
+        // Team has submitted
+        submissionsSheet.appendRow([
+          teamName,
+          leaderName,
+          sub.project_name || "—",
+          sub.description || "—",
+          sub.demo_url || "—",
+          sub.github_url || "—",
+          sub.ai_percentage !== null ? sub.ai_percentage + "%" : "—",
+          sub.git_audit_status ? sub.git_audit_status.toUpperCase() : "PENDING",
+          sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : "—"
+        ]);
+      } else {
+        // Team has NOT submitted yet
+        submissionsSheet.appendRow([
+          teamName,
+          leaderName,
+          "—",
+          "—",
+          "—",
+          "—",
+          "—",
+          "PENDING SUBMISSION",
+          "—"
+        ]);
+      }
     });
     
     formatHeaderRow(submissionsSheet);
@@ -74,93 +126,83 @@ function syncAllFromSupabase() {
   // ==========================================
   // 2. SYNC ATTENDANCE
   // ==========================================
-  const attResponse = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/profiles?user_role=eq.attendee&select=*", options);
-  if (attResponse.getResponseCode() === 200) {
-    const attendees = JSON.parse(attResponse.getContentText());
+  // Clear and set headers
+  attendanceSheet.clear();
+  attendanceSheet.appendRow([
+    "Attendee Name", 
+    "Email Address", 
+    "College / Institution", 
+    "Allocated Venue", 
+    "Attendance Status"
+  ]);
+  
+  let presentCount = 0;
+  attendees.forEach(att => {
+    const isPresent = att.is_approved === true;
+    if (isPresent) presentCount++;
     
-    // Clear and set headers
-    attendanceSheet.clear();
     attendanceSheet.appendRow([
-      "Attendee Name", 
-      "Email Address", 
-      "College / Institution", 
-      "Allocated Venue", 
-      "Attendance Status"
+      att.full_name || "Anonymous",
+      att.email,
+      att.college || "—",
+      att.venue || "Unassigned",
+      isPresent ? "PRESENT ✅" : "ABSENT ❌"
     ]);
-    
-    let presentCount = 0;
-    attendees.forEach(att => {
-      const isPresent = att.is_approved === true;
-      if (isPresent) presentCount++;
-      
-      attendanceSheet.appendRow([
-        att.full_name || "Anonymous",
-        att.email,
-        att.college || "—",
-        att.venue || "Unassigned",
-        isPresent ? "PRESENT ✅" : "ABSENT ❌"
-      ]);
-    });
-    
-    // Append a summary card at the bottom
-    attendanceSheet.appendRow([""]);
-    attendanceSheet.appendRow(["Summary Stats:"]);
-    attendanceSheet.appendRow(["Total Approved Attendees Present", presentCount]);
-    attendanceSheet.appendRow(["Total Registered Attendees", attendees.length]);
-    
-    formatHeaderRow(attendanceSheet);
-    
-    // Bold summary metrics
-    const lastRow = attendanceSheet.getLastRow();
-    attendanceSheet.getRange(lastRow - 2, 1, 3, 2).setFontWeight("bold");
-  }
+  });
+  
+  // Append summary stats
+  attendanceSheet.appendRow([""]);
+  attendanceSheet.appendRow(["Summary Stats:"]);
+  attendanceSheet.appendRow(["Total Approved Attendees Present", presentCount]);
+  attendanceSheet.appendRow(["Total Registered Attendees", attendees.length]);
+  
+  formatHeaderRow(attendanceSheet);
+  
+  // Bold summary metrics
+  const lastRow = attendanceSheet.getLastRow();
+  attendanceSheet.getRange(lastRow - 2, 1, 3, 2).setFontWeight("bold");
   
   // ==========================================
   // 3. SYNC TEAMS & MEMBERS
   // ==========================================
-  const teamsResponse = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/profiles?user_role=eq.attendee&select=*", options);
-  if (teamsResponse.getResponseCode() === 200) {
-    const attendees = JSON.parse(teamsResponse.getContentText());
-    
-    // Group attendees by team_name
-    const teamGroups = {};
-    attendees.forEach(att => {
-      const tName = att.team_name || "Solo Pool (No Team)";
-      if (!teamGroups[tName]) teamGroups[tName] = [];
-      teamGroups[tName].push(att);
+  // Group attendees by team_name
+  const teamGroups = {};
+  attendees.forEach(att => {
+    const tName = att.team_name || "Solo Pool (No Team)";
+    if (!teamGroups[tName]) teamGroups[tName] = [];
+    teamGroups[tName].push(att);
+  });
+  
+  // Clear and set headers
+  teamsSheet.clear();
+  teamsSheet.appendRow([
+    "Team Name", 
+    "Role / Position", 
+    "Member Name", 
+    "Email Address", 
+    "Innovation Track"
+  ]);
+  
+  Object.keys(teamGroups).sort().forEach(team => {
+    const members = teamGroups[team];
+    members.forEach(m => {
+      let role = "Member";
+      if (m.is_team_leader) role = "Team Leader 👑";
+      if (team === "Solo Pool (No Team)") role = "Solo Hacker";
+      
+      teamsSheet.appendRow([
+        team,
+        role,
+        m.full_name || "Anonymous",
+        m.email,
+        m.selected_track || "—"
+      ]);
     });
-    
-    // Clear and set headers
-    teamsSheet.clear();
-    teamsSheet.appendRow([
-      "Team Name", 
-      "Role / Position", 
-      "Member Name", 
-      "Email Address", 
-      "Innovation Track"
-    ]);
-    
-    Object.keys(teamGroups).sort().forEach(team => {
-      const members = teamGroups[team];
-      members.forEach(m => {
-        let role = "Member";
-        if (m.is_team_leader) role = "Team Leader 👑";
-        if (team === "Solo Pool (No Team)") role = "Solo Hacker";
-        
-        teamsSheet.appendRow([
-          team,
-          role,
-          m.full_name || "Anonymous",
-          m.email,
-          m.selected_track || "—"
-        ]);
-      });
-      // Add empty spacing row between teams
-      teamsSheet.appendRow([""]);
-    });
-    
-    formatHeaderRow(teamsSheet);
-  }
+    // Add empty spacing row between teams
+    teamsSheet.appendRow([""]);
+  });
+  
+  formatHeaderRow(teamsSheet);
   
   SpreadsheetApp.getUi().alert("✦ Starlet Sync Complete!\n\nAll spreadsheet pages have been updated with the latest live data from Supabase.");
 }
@@ -176,7 +218,7 @@ function getOrCreateSheet(ss, name) {
 
 // Styling helper for header rows
 function formatHeaderRow(sheet) {
-  const range = sheet.getRange("A1:H1");
+  const range = sheet.getRange("A1:I1");
   range.setBackground("#001F3F"); // Navy
   range.setFontColor("#FFFFFF");  // White
   range.setFontWeight("bold");
