@@ -1,4 +1,5 @@
 name: Deploy App to GitHub Pages
+# Triggered on pushes to the deploy branch
 
 on:
   push:
