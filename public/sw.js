@@ -1,17 +1,22 @@
-const CACHE_NAME = 'starlet-cache-v5';
+const CACHE_NAME = 'starlet-cache-v7';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/offline.html',
-  '/brand/favicon.png',
-  '/brand/pwa-icon-192.png',
-  '/brand/pwa-icon-512.png'
+  './',
+  'index.html',
+  'offline.html',
+  'brand/favicon.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      // Robust batch-caching where single asset loading failures don't abort SW installation
+      return Promise.all(
+        ASSETS_TO_CACHE.map((asset) => {
+          return cache.add(asset).catch((err) => {
+            console.warn(`Failed to cache asset during install: ${asset}`, err);
+          });
+        })
+      );
     })
   );
   self.skipWaiting();
@@ -65,7 +70,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       }).catch(() => {
         if (event.request.mode === 'navigate') {
-          return caches.match('/offline.html');
+          return caches.match('offline.html');
         }
       });
     })

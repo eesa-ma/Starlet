@@ -9092,3 +9092,33 @@ input:checked + .a11y-slider:before {
     width: 0%;
     transition: width 0.1s linear;
 }
+
+/* Showroom Responsive Grid & Container CSS */
+.showroom-container {
+    padding-top: 120px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    min-height: 80vh;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.showroom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    padding-bottom: 4rem;
+}
+
+@media (max-width: 768px) {
+    .showroom-container {
+        padding-top: 70px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .showroom-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+}

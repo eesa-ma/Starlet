@@ -9149,7 +9149,7 @@ function App() {
           </div>
         </div>
       ) : activeView === 'showroom' ? (
-        <div className="showroom-container" style={{ paddingTop: '120px', paddingLeft: '2rem', paddingRight: '2rem', minHeight: '80vh', maxWidth: '1400px', margin: '0 auto' }}>
+        <div className="showroom-container">
           <div className="section-header" style={{ marginBottom: '3rem', textAlign: 'center' }}>
             <h1 className="text-3d" style={{ fontSize: '3rem', marginBottom: '1rem' }}>Project Showroom</h1>
             <p className="subtitle-large" style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
@@ -9158,14 +9158,20 @@ function App() {
             
             {/* Showroom Search Bar */}
             <div style={{ maxWidth: '600px', margin: '0 auto', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-navy)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </span>
               <input
                 type="text"
-                placeholder="🔍 Search by Team Name or Team Leader Name..."
+                placeholder="Search by Team Name or Team Leader Name..."
                 value={showroomSearchQuery}
                 onChange={(e) => setShowroomSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '1rem 1.5rem',
+                  padding: '1rem 1.5rem 1rem 3.2rem',
                   fontSize: '1.05rem',
                   fontFamily: 'Outfit',
                   borderRadius: '16px',
@@ -9239,7 +9245,7 @@ function App() {
             }
 
             return (
-              <div className="submissions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem', paddingBottom: '4rem' }}>
+              <div className="showroom-grid">
                 {filteredSubmissions.map((submission) => {
                   const formattedTime = submission.created_at 
                     ? new Date(submission.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date(submission.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })
@@ -9247,7 +9253,7 @@ function App() {
                   const leaderName = getSubmissionTeamLeader(submission.team_name);
 
                   return (
-                    <div key={submission.id} className="arcade-char-card" style={{ padding: '2rem', border: '4px solid var(--text-navy)', background: 'var(--bg-cream)', boxShadow: '8px 8px 0px var(--text-navy)', borderRadius: '24px', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem' }}>
+                    <div key={submission.id} className="blog-post-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', background: '#fff', textAlign: 'left' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="sidebar-tag" style={{ background: 'var(--pink-primary)', color: '#fff', border: 'none', fontWeight: 'bold' }}>
                           {submission.team_name}
