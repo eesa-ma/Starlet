@@ -1,4 +1,4 @@
-// Edge Function — runs server-side on Supabase infrastructure.
+// Edge Function - runs server-side on Supabase infrastructure.
 // Uses service_role key (set as SUPABASE_SERVICE_ROLE_KEY secret in Supabase dashboard).
 // Called ONLY by admin users. Validates caller JWT role before generating link.
 
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     })
 
     const { data, error } = await adminClient.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'recovery',
       email: email.trim().toLowerCase(),
     })
 
