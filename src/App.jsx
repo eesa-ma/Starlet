@@ -7758,35 +7758,43 @@ function App() {
                                           </div>
 
                                           {/* Automated Git & AI Audit Report details */}
-                                          <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                            <h5 style={{ color: 'var(--pink-primary)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-                                              🔍 Automated Git & AI Audit Report
+                                          <div style={{ marginTop: '1rem', padding: '1rem', background: '#ffffff', borderRadius: '10px', border: '2px solid rgba(0,31,63,0.15)' }}>
+                                            <h5 style={{ color: '#000000', margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem', fontWeight: 'bold' }}>
+                                              🔍 Automated Git &amp; AI Audit Report
                                             </h5>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '0.8rem' }}>
                                               <div>
-                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>AUDIT STATUS</span>
+                                                <span style={{ fontSize: '0.72rem', color: '#000000', fontWeight: '600', display: 'block', marginBottom: '0.15rem' }}>AUDIT STATUS</span>
                                                 <strong style={{
                                                   fontSize: '0.9rem',
-                                                  color: sub.git_audit_status === 'passed' ? '#48bb78' :
-                                                    sub.git_audit_status === 'scanning' ? '#4299e1' :
-                                                      sub.git_audit_status === 'flagged' ? '#f56565' : '#a0aec0'
+                                                  color: sub.git_audit_status === 'passed' ? '#276749' :
+                                                    sub.git_audit_status === 'scanning' ? '#2b6cb0' :
+                                                      sub.git_audit_status === 'flagged' ? '#c53030' : '#000000'
                                                 }}>
                                                   {sub.git_audit_status?.toUpperCase() || 'PENDING'}
                                                 </strong>
                                               </div>
                                               <div>
-                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>COMMIT COUNT</span>
-                                                <strong style={{ fontSize: '0.9rem' }}>{sub.commit_count !== null && sub.commit_count !== undefined ? `${sub.commit_count} commits` : '—'}</strong>
+                                                <span style={{ fontSize: '0.72rem', color: '#000000', fontWeight: '600', display: 'block', marginBottom: '0.15rem' }}>COMMIT COUNT</span>
+                                                <strong style={{ fontSize: '0.9rem', color: '#000000' }}>{sub.commit_count !== null && sub.commit_count !== undefined ? `${sub.commit_count} commits` : '—'}</strong>
                                               </div>
                                               <div>
-                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>AI CODE CONFIDENCE</span>
-                                                <strong style={{ fontSize: '0.9rem' }}>{sub.ai_percentage !== null && sub.ai_percentage !== undefined ? `${sub.ai_percentage}% AI` : '—'}</strong>
+                                                <span style={{ fontSize: '0.72rem', color: '#000000', fontWeight: '600', display: 'block', marginBottom: '0.15rem' }}>AI CODE CONFIDENCE</span>
+                                                <strong style={{ fontSize: '0.9rem', color: '#000000' }}>
+                                                  {sub.ai_percentage !== null && sub.ai_percentage !== undefined
+                                                    ? `${sub.ai_percentage}% AI`
+                                                    : sub.git_audit_status === 'scanning'
+                                                      ? 'Scanning...'
+                                                      : sub.git_audit_status
+                                                        ? '0% AI'
+                                                        : '—'}
+                                                </strong>
                                               </div>
                                             </div>
                                             {sub.audit_anomalies && sub.audit_anomalies.length > 0 && (
                                               <div style={{ marginBottom: '0.8rem' }}>
-                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>FLAGGED ANOMALIES</span>
-                                                <ul style={{ margin: '0.2rem 0 0 0', paddingLeft: '1.2rem', color: '#f6e05e', fontSize: '0.82rem', lineHeight: '1.4' }}>
+                                                <span style={{ fontSize: '0.72rem', color: '#000000', fontWeight: '600', display: 'block', marginBottom: '0.2rem' }}>FLAGGED ANOMALIES</span>
+                                                <ul style={{ margin: '0.2rem 0 0 0', paddingLeft: '1.2rem', color: '#c53030', fontSize: '0.82rem', lineHeight: '1.4' }}>
                                                   {sub.audit_anomalies.map((anom, aIdx) => (
                                                     <li key={aIdx}>{anom}</li>
                                                   ))}
