@@ -5010,11 +5010,7 @@ function App() {
                         <span>My Profile</span>
                       </div>
                     </>
-                  ) : (
-                    <div className="mobile-auth-btns">
-                      <div className="login-btn" onClick={() => { setActiveView('login'); setIsMenuOpen(false); }}>LOGIN</div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </nav>
 
@@ -5037,11 +5033,7 @@ function App() {
                         title="My Profile"
                       />
                     </>
-                  ) : (
-                    <>
-                      <div className="login-btn" onClick={() => setActiveView('login')}>LOGIN</div>
-                    </>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -5172,8 +5164,8 @@ function App() {
               </div>
 
               <div className="hero-ctas">
-                {!isLoggedIn && <button className="join-btn" onClick={() => setActiveView('signup')}>CREATE AN ACCOUNT</button>}
-                <a href="#what-is-starlet" className="btn-secondary">LEARN MORE</a>
+                {!isLoggedIn && <button className="join-btn" onClick={() => setActiveView('signup')}>SIGN UP</button>}
+                {!isLoggedIn && <button className="btn-secondary" onClick={() => setActiveView('login')}>LOGIN</button>}
               </div>
 
 
