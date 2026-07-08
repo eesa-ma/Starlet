@@ -6694,7 +6694,7 @@ function App() {
                             <div className="team-track">
                               <strong>Track:</strong> {members[0].selected_track || 'Not Selected Yet'}
                             </div>
-                            <div className="team-venue-override" style={{ marginTop: '0.5rem', borderTop: '1px solid #eee', paddingTop: '0.5rem' }}>
+                            <div className="team-venue-override" style={{ marginTop: '0.5rem', borderTop: '1px solid #eee', paddingTop: '0.5rem', marginBottom: '1rem' }}>
                               <select
                                 className="admin-select-small"
                                 value={members[0].venue || ''}
@@ -6709,7 +6709,7 @@ function App() {
                             </div>
                             <div className="team-members-list">
                               {members.map(m => (
-                                <div key={m.id} className="team-member-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div key={m.id} className="team-member-item">
                                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                       {m.full_name}
@@ -7382,7 +7382,7 @@ function App() {
                                                 <span className="detail-label">Phone</span>
                                                 <span className="detail-value">
                                                   {u.phone
-                                                    ? <a href={`tel:${u.phone}`} style={{ color: 'var(--pink-primary)', fontWeight: 700 }}>📞 {u.phone}</a>
+                                                    ? <a href={`tel:${u.phone}`} style={{ color: 'var(--pink-primary)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><img src="/svg/emoji/phone.svg" alt="phone" style={{ width: '16px', height: '16px' }} /> {u.phone}</a>
                                                     : <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>Not provided</span>
                                                   }
                                                 </span>
@@ -7399,8 +7399,8 @@ function App() {
                                                 <span className="detail-label">{u.user_role === 'attendee' ? 'Attendance' : 'Approval Status'}</span>
                                                 <span className="detail-value" style={{ color: u.is_approved ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
                                                   {u.user_role === 'attendee'
-                                                    ? (u.is_approved ? '✓ Present' : '⏳ Absent')
-                                                    : (u.is_approved ? '✓ Verified' : '⏳ Pending')
+                                                    ? (u.is_approved ? '✓ Present' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><img src="/svg/emoji/pending.svg" alt="absent" style={{ width: '16px', height: '16px' }} /> Absent</span>)
+                                                    : (u.is_approved ? '✓ Verified' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><img src="/svg/emoji/pending.svg" alt="pending" style={{ width: '16px', height: '16px' }} /> Pending</span>)
                                                   }
                                                 </span>
                                               </div>
