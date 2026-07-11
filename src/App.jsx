@@ -8373,6 +8373,9 @@ function App() {
                   <div className="profile-header-details">
                     <h2 className="text-3d">{user.name}</h2>
                     <div className="profile-badges-row">
+                      <div className={`status-badge ${user.isApproved ? 'approved' : 'pending'}`}>
+                        {user.isApproved ? '✅ CHECKED IN' : '⏳ NOT CHECKED IN'}
+                      </div>
                       {user.isTeamLeader && (
                         <div className="status-badge approved" style={{ background: 'var(--pink-primary)', color: '#fff', border: 'none' }}>
                           TEAM LEADER
@@ -8450,21 +8453,38 @@ function App() {
 
                 {/* STARLET 5.0 PASS CARD */}
                 {user.id && (
-                  <div className="hacker-pass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--bg-cream)', border: '4px solid var(--text-navy)', borderRadius: '24px', boxShadow: '5px 5px 0px var(--text-navy)', textAlign: 'center' }}>
-                    <div className="handwritten" style={{ fontSize: '1.2rem', color: 'var(--pink-primary)', marginBottom: '0.5rem', fontWeight: 'bold' }}>Starlet 5.0 Pass</div>
-                    <div style={{ display: 'inline-block', padding: '0.8rem', background: '#fff', border: '3px solid var(--text-navy)', borderRadius: '16px', margin: '0.5rem 0' }}>
+                  <div className="hacker-pass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--bg-cream)', border: `4px solid ${user.isApproved ? '#25D366' : 'var(--text-navy)'}`, borderRadius: '24px', boxShadow: `5px 5px 0px ${user.isApproved ? '#25D366' : 'var(--text-navy)'}`, textAlign: 'center', position: 'relative', overflow: 'hidden', transition: 'border-color 0.5s, box-shadow 0.5s' }}>
+                    {user.isApproved && (
+                      <div className="checkin-verified-ribbon" style={{ position: 'absolute', top: '14px', right: '-35px', background: '#25D366', color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '4px 40px', transform: 'rotate(45deg)', letterSpacing: '0.5px', zIndex: 2, boxShadow: '0 2px 6px rgba(37,211,102,0.3)' }}>VERIFIED</div>
+                    )}
+                    <div className="handwritten" style={{ fontSize: '1.2rem', color: user.isApproved ? '#25D366' : 'var(--pink-primary)', marginBottom: '0.5rem', fontWeight: 'bold', transition: 'color 0.5s' }}>Starlet 5.0 Pass</div>
+                    <div style={{ display: 'inline-block', padding: '0.8rem', background: '#fff', border: `3px solid ${user.isApproved ? '#25D366' : 'var(--text-navy)'}`, borderRadius: '16px', margin: '0.5rem 0', position: 'relative', transition: 'border-color 0.5s' }}>
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=001f3f&bgcolor=ffffff&data=${encodeURIComponent(user.id)}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=${user.isApproved ? '25D366' : '001f3f'}&bgcolor=ffffff&data=${encodeURIComponent(user.id)}`}
                         alt="Check-in Pass QR"
-                        style={{ display: 'block', width: '150px', height: '150px' }}
+                        style={{ display: 'block', width: '150px', height: '150px', transition: 'opacity 0.5s', opacity: user.isApproved ? 0.35 : 1 }}
                       />
+                      {user.isApproved && (
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                          <div style={{ width: '50px', height: '50px', background: 'rgba(37, 211, 102, 0.12)', border: '3px solid #25D366', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#25D366" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          </div>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#25D366', letterSpacing: '1px' }}>CHECKED IN</span>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-navy)' }}>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: user.isApproved ? '#25D366' : 'var(--text-navy)', transition: 'color 0.5s' }}>
                       {user.name?.toUpperCase()}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                       ID: {user.id.substring(0, 8)}...
                     </div>
+                    {user.isApproved && (
+                      <div style={{ marginTop: '0.6rem', fontSize: '0.75rem', color: '#25D366', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#25D366" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Attendance verified — you're all set!
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
