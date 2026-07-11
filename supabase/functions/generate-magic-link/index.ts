@@ -95,8 +95,11 @@ Deno.serve(async (req) => {
     }
 
     const { data, error } = await adminClient.auth.admin.generateLink({
-      type: 'recovery',
+      type: 'magiclink',
       email: trimmedEmail,
+      options: {
+        redirectTo: 'https://starlet.mind-empowered.org',
+      },
     })
 
     if (error) {
