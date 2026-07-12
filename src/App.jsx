@@ -10966,6 +10966,38 @@ function App() {
                       <li>Upload your <strong>demo video</strong> and <strong>presentation slide deck (PPTX/PDF)</strong> into that team folder.</li>
                       <li>Submit your GitHub repo link and your team folder's Google Drive link in the form below.</li>
                     </ol>
+
+                    {/* Video Submission Guidelines */}
+                    <div style={{ marginTop: '1.2rem', background: 'linear-gradient(135deg, rgba(255, 0, 110, 0.06), rgba(255, 200, 0, 0.08))', border: '2px solid var(--pink-primary)', borderRadius: '12px', padding: '1rem 1.2rem' }}>
+                      <h5 style={{ color: 'var(--pink-primary)', fontFamily: "'Fredoka One', cursive", margin: '0 0 0.5rem 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        🎬 Video Submission Guidelines
+                      </h5>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-navy)', margin: '0 0 0.5rem 0', lineHeight: '1.5', fontStyle: 'italic', fontWeight: '600' }}>
+                        Think of your video as an <strong>elevator pitch</strong> — a trailer of your movie!
+                      </p>
+                      <ul style={{ fontSize: '0.82rem', color: 'var(--text-navy)', paddingLeft: '1.2rem', margin: 0, lineHeight: '1.7' }}>
+                        <li>Video should be <strong>maximum 1 minute</strong> long</li>
+                        <li>Clearly state the <strong>problem statement</strong></li>
+                        <li>Identify your <strong>target audience</strong></li>
+                        <li>Explain <strong>your solution</strong></li>
+                        <li>Is there a current solution already? If so, <strong>how is yours better?</strong></li>
+                        <li>Is it <strong>feasible financially or practically?</strong></li>
+                      </ul>
+                    </div>
+
+                    {/* PPT Submission Guidelines */}
+                    <div style={{ marginTop: '0.8rem', background: 'linear-gradient(135deg, rgba(0, 31, 63, 0.05), rgba(0, 180, 216, 0.06))', border: '2px solid var(--text-navy)', borderRadius: '12px', padding: '1rem 1.2rem' }}>
+                      <h5 style={{ color: 'var(--text-navy)', fontFamily: "'Fredoka One', cursive", margin: '0 0 0.5rem 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        📊 PPT Submission Guidelines
+                      </h5>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-navy)', margin: '0 0 0.5rem 0', lineHeight: '1.5', fontStyle: 'italic', fontWeight: '600' }}>
+                        Your PPT is like the movie — only if your trailer (video) is good will the judges check your PPT!
+                      </p>
+                      <ul style={{ fontSize: '0.82rem', color: 'var(--text-navy)', paddingLeft: '1.2rem', margin: 0, lineHeight: '1.7' }}>
+                        <li><strong>Maximum 5 - 7 slides</strong></li>
+                        <li>Must have all the details that are <strong>self-explanatory</strong></li>
+                      </ul>
+                    </div>
                   </div>
 
                   <div className="input-group">
