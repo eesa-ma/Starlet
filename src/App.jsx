@@ -393,8 +393,12 @@ function App() {
 
   // Feedback Gating states
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackText, setFeedbackText] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [fbQ1, setFbQ1] = useState(''); // How was the experience? (mandatory)
+  const [fbQ2, setFbQ2] = useState(''); // Any memorable session? (mandatory)
+  const [fbQ3, setFbQ3] = useState(''); // Best memory? (optional)
+  const [fbQ4Files, setFbQ4Files] = useState([]); // [{file, preview}] — Upload blogs (mandatory, min 2)
+  const [fbQ5, setFbQ5] = useState(''); // Place to improve (mandatory)
 
   useEffect(() => {
     const handleResize = () => {
@@ -4629,6 +4633,12 @@ function App() {
   };
 
   const handleDownloadCertificate = async () => {
+    // Block download if feedback hasn't been submitted yet
+    if (localStorage.getItem(`feedback_submitted_${user.id}`) !== 'true') {
+      setShowFeedbackModal(true);
+      return;
+    }
+
     const input = document.getElementById('certificate-render');
     if (!input) return;
 
@@ -4685,41 +4695,107 @@ function App() {
   };
 
   const handleSubmitFeedback = async () => {
-    const wordCount = getWordCount(feedbackText);
-    if (wordCount < 100) {
-      alert(`Please write at least 100 words. Current count: ${wordCount}`);
+    // Validate mandatory questions: Q1, Q2, Q4 (min 2 files), Q5
+    if (!fbQ1.trim()) {
+      alert('Please answer Question 1: How was the experience? (mandatory)');
+      return;
+    }
+    if (!fbQ2.trim()) {
+      alert('Please answer Question 2: Any memorable session? (mandatory)');
+      return;
+    }
+    if (fbQ4Files.length < 2) {
+      alert('Please upload at least 2 blog photos or videos (Question 4 is mandatory).');
+      return;
+    }
+    if (!fbQ5.trim()) {
+      alert('Please answer Question 5: Place to improve (mandatory)');
       return;
     }
 
     setIsSubmittingFeedback(true);
     try {
+      // ── Step 1: Upload all blog files to Supabase Storage ──
+      const q4BlogEntries = []; // [{url, type: 'image'|'video'}]
+      for (const item of fbQ4Files) {
+        try {
+          const fileExt = item.file.name.split('.').pop();
+          const filePath = `${user.id}_${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('feedback-blogs')
+            .upload(filePath, item.file, { upsert: true });
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage
+              .from('feedback-blogs')
+              .getPublicUrl(filePath);
+            if (urlData?.publicUrl) {
+              q4BlogEntries.push({
+                url:  urlData.publicUrl,
+                type: item.file.type.startsWith('video') ? 'video' : 'image'
+              });
+            }
+          }
+        } catch (_) {
+          console.warn('One blog file upload failed, skipping.');
+        }
+      }
+
+      // ── Step 2: Save to Supabase feedback table (primary) ──
+      const { error: dbError } = await supabase.from('feedback').insert([{
+        user_id:              session?.user?.id || null,
+        role:                 user.role || 'attendee',
+        name:                 user.name   || 'Anonymous',
+        email:                user.email  || null,
+        college:              user.college || null,
+        q1_experience:        fbQ1,
+        q2_memorable_session: fbQ2,
+        q3_best_memory:       fbQ3 || null,
+        q4_blog_entries:      q4BlogEntries,
+        q5_improve:           fbQ5,
+      }]);
+
+      if (dbError) {
+        console.error('Supabase insert error:', dbError);
+      }
+
+      // ── Step 3: Google Sheets backup ──
       const googleScriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxegpLYC3j5i1UIGffgpRXdHOZ6pgDVDQSc3qyY-_xNs5z0MopMkH_ezspB5PTpF2U/exec';
-
-      const payload = {
-        action: 'feedback',
-        name: user.name || 'Anonymous',
-        email: user.email || '—',
-        college: user.college || '—',
-        feedback: feedbackText
-      };
-
       if (googleScriptUrl) {
-        await fetch(googleScriptUrl, {
+        fetch(googleScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action:               'feedback',
+            role:                 user.role || 'attendee',
+            name:                 user.name   || 'Anonymous',
+            email:                user.email  || '—',
+            college:              user.college || '—',
+            q1_experience:        fbQ1,
+            q2_memorable_session: fbQ2,
+            q3_best_memory:       fbQ3,
+            q4_blog_urls:         q4BlogEntries.map(e => e.url).join(', '),
+            q5_improve:           fbQ5,
+          })
+        }).catch(() => {}); // fire-and-forget
       }
 
       localStorage.setItem(`feedback_submitted_${user.id}`, 'true');
       setShowFeedbackModal(false);
-      setFeedbackText('');
+      // Reset all fields
+      setFbQ1('');
+      setFbQ2('');
+      setFbQ3('');
+      setFbQ4Files([]);
+      setFbQ5('');
 
-      setActiveView('certificate');
-      alert('Thank you for your feedback! Your certificate has been unlocked.');
+      // Only attendees go to certificate view; mentors/volunteers just get a thank-you
+      if (user.role === 'attendee') {
+        setActiveView('certificate');
+        alert('Thank you for your feedback! Your certificate has been unlocked.');
+      } else {
+        alert('Thank you for your feedback! Your thoughts mean a lot to us. ♥');
+      }
     } catch (error) {
       console.error('Feedback submit error:', error);
       alert('Failed to submit feedback: ' + error.message + '. Please try again.');
@@ -8067,6 +8143,25 @@ function App() {
                   >
                     SAVE CHANGES
                   </button>
+                  {/* Optional Feedback Button for Mentors */}
+                  <button
+                    className="btn-secondary"
+                    onClick={() => setShowFeedbackModal(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '0.75rem 1.2rem',
+                      fontFamily: 'Fredoka One',
+                      fontSize: '0.95rem',
+                      opacity: localStorage.getItem(`feedback_submitted_${user.id}`) === 'true' ? 0.55 : 1
+                    }}
+                  >
+                    {localStorage.getItem(`feedback_submitted_${user.id}`) === 'true'
+                      ? '✓ FEEDBACK SUBMITTED'
+                      : '✦ SHARE YOUR FEEDBACK'}
+                  </button>
                 </div>
               </div>
 
@@ -8328,6 +8423,35 @@ function App() {
                     <span className="stat-value" style={{ fontSize: '1rem' }}>{user.college || 'N/A'}</span>
                   </div>
                 </div>
+
+                {/* Optional Feedback Button for Volunteers */}
+                <button
+                  onClick={() => setShowFeedbackModal(true)}
+                  style={{
+                    marginTop: '1.5rem',
+                    width: '100%',
+                    padding: '0.85rem 1.2rem',
+                    borderRadius: '16px',
+                    border: '3px solid var(--text-navy)',
+                    background: localStorage.getItem(`feedback_submitted_${user.id}`) === 'true'
+                      ? 'rgba(16,185,129,0.12)'
+                      : 'linear-gradient(135deg, #ffd700, #ff8c00)',
+                    color: 'var(--text-navy)',
+                    fontFamily: 'Fredoka One',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    boxShadow: '4px 4px 0px var(--text-navy)',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {localStorage.getItem(`feedback_submitted_${user.id}`) === 'true'
+                    ? '✓ FEEDBACK SUBMITTED'
+                    : '✦ SHARE YOUR FEEDBACK'}
+                </button>
 
               </div>
 
@@ -11972,12 +12096,15 @@ function App() {
             className="mentor-modal"
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: '650px',
+              maxWidth: '680px',
+              width: '95vw',
               padding: '2.5rem',
               display: 'flex',
               flexDirection: 'column',
-              gap: '1.5rem',
-              position: 'relative'
+              gap: '1.6rem',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto'
             }}
           >
             <button
@@ -11998,72 +12125,240 @@ function App() {
               ×
             </button>
 
+            {/* Header */}
             <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
               <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✦</div>
-              <h2 className="text-3d" style={{ fontSize: '2rem', marginBottom: '0.75rem', color: 'var(--text-navy)', fontFamily: 'Fredoka One' }}>
+              <h2 className="text-3d" style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--text-navy)', fontFamily: 'Fredoka One' }}>
                 Share Your Feedback
               </h2>
-              <p style={{ fontFamily: 'Outfit', color: 'var(--text-navy)', opacity: 0.85, fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>
-                We'd love to hear your thoughts about Starlet 5.0! Please write a quick feedback of at least <strong>100 words</strong> to unlock your certificate downloading dashboard.
+              <p style={{ fontFamily: 'Outfit', color: 'var(--text-navy)', opacity: 0.8, fontSize: '0.9rem', lineHeight: '1.5', margin: 0 }}>
+                Answer the questions below to unlock your certificate. <strong>Questions 1, 2 & 5 are mandatory.</strong>
               </p>
             </div>
 
-            <div style={{ position: 'relative', width: '100%' }}>
+            {/* Q1 — How was the experience? (MANDATORY) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontFamily: 'Fredoka One', fontSize: '1rem', color: 'var(--text-navy)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                1. How was the experience?
+                <span style={{ color: '#ef4444', fontSize: '1.1rem' }}>*</span>
+              </label>
               <textarea
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="What did you think of the venue, mentoring, organizers, food, workshops, and project building? What was your favorite part of Starlet 5.0?"
+                value={fbQ1}
+                onChange={(e) => setFbQ1(e.target.value)}
+                placeholder="Tell us how the overall experience was at Starlet 5.0 — the vibe, the energy, the people..."
+                rows={3}
                 style={{
                   width: '100%',
-                  height: '220px',
-                  padding: '1.2rem',
-                  borderRadius: '20px',
-                  border: '3.5px solid var(--text-navy)',
+                  padding: '1rem',
+                  borderRadius: '16px',
+                  border: `3px solid ${fbQ1.trim() ? '#10b981' : 'var(--text-navy)'}`,
                   backgroundColor: '#fffdf9',
                   color: 'var(--text-navy)',
                   fontFamily: 'Outfit, sans-serif',
-                  fontSize: '0.95rem',
-                  resize: 'none',
-                  boxShadow: 'inset 4px 4px 0px rgba(0, 31, 63, 0.08)',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
                   outline: 'none',
                   lineHeight: '1.5',
-                  transition: 'all 0.2s'
+                  boxSizing: 'border-box'
                 }}
               />
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '0.6rem',
-                fontSize: '0.9rem',
-                fontFamily: 'Outfit',
-                fontWeight: 'bold'
-              }}>
-                <span style={{ color: 'var(--text-navy)' }}>
-                  Word Count:{' '}
-                  <span style={{
-                    color: getWordCount(feedbackText) >= 100 ? '#10b981' : '#ef4444',
-                    fontSize: '1.05rem'
-                  }}>
-                    {getWordCount(feedbackText)}
-                  </span>{' '}
-                  / 100
-                </span>
-
-                {getWordCount(feedbackText) >= 100 ? (
-                  <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontSize: '1.1rem' }}>✓</span> Minimum word count reached!
-                  </span>
-                ) : (
-                  <span style={{ color: '#ef4444', fontWeight: '500', opacity: 0.9 }}>
-                    Need {100 - getWordCount(feedbackText)} more words
-                  </span>
-                )}
-              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', width: '100%' }}>
+            {/* Q2 — Any memorable session? (MANDATORY) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontFamily: 'Fredoka One', fontSize: '1rem', color: 'var(--text-navy)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                2. Any memorable session?
+                <span style={{ color: '#ef4444', fontSize: '1.1rem' }}>*</span>
+              </label>
+              <textarea
+                value={fbQ2}
+                onChange={(e) => setFbQ2(e.target.value)}
+                placeholder="Was there a talk, workshop, or activity that really stood out for you?"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  borderRadius: '16px',
+                  border: `3px solid ${fbQ2.trim() ? '#10b981' : 'var(--text-navy)'}`,
+                  backgroundColor: '#fffdf9',
+                  color: 'var(--text-navy)',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  outline: 'none',
+                  lineHeight: '1.5',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Q3 — Best memory? (OPTIONAL) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontFamily: 'Fredoka One', fontSize: '1rem', color: 'var(--text-navy)' }}>
+                3. Best memory? <span style={{ fontWeight: 400, fontFamily: 'Outfit', fontSize: '0.85rem', opacity: 0.65 }}>(optional)</span>
+              </label>
+              <textarea
+                value={fbQ3}
+                onChange={(e) => setFbQ3(e.target.value)}
+                placeholder="Share your favourite moment or memory from Starlet 5.0!"
+                rows={2}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  borderRadius: '16px',
+                  border: '3px solid var(--text-navy)',
+                  backgroundColor: '#fffdf9',
+                  color: 'var(--text-navy)',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  outline: 'none',
+                  lineHeight: '1.5',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Q4 — Upload blogs (MANDATORY, min 2) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontFamily: 'Fredoka One', fontSize: '1rem', color: 'var(--text-navy)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                4. Upload blogs
+                <span style={{ color: '#ef4444', fontSize: '1.1rem' }}>*</span>
+                <span style={{ fontWeight: 400, fontFamily: 'Outfit', fontSize: '0.82rem', color: 'var(--text-navy)', opacity: 0.7 }}>
+                  (min 2 — images or videos)
+                </span>
+              </label>
+
+              {/* Uploaded file thumbnails grid */}
+              {fbQ4Files.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '0.4rem' }}>
+                  {fbQ4Files.map((item, idx) => (
+                    <div key={idx} style={{ position: 'relative', width: '90px', height: '90px', borderRadius: '12px', overflow: 'hidden', border: '2.5px solid #10b981', flexShrink: 0 }}>
+                      {item.file.type.startsWith('video') ? (
+                        <video
+                          src={item.preview}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          muted
+                        />
+                      ) : (
+                        <img
+                          src={item.preview}
+                          alt={`blog ${idx + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      )}
+                      {/* Type badge */}
+                      <span style={{
+                        position: 'absolute', top: '4px', left: '4px',
+                        background: item.file.type.startsWith('video') ? '#7c3aed' : '#0ea5e9',
+                        color: '#fff', fontSize: '0.65rem', fontFamily: 'Outfit', fontWeight: 700,
+                        padding: '2px 5px', borderRadius: '6px', textTransform: 'uppercase'
+                      }}>
+                        {item.file.type.startsWith('video') ? 'VIDEO' : 'IMG'}
+                      </span>
+                      {/* Remove button */}
+                      <button
+                        onClick={() => setFbQ4Files(prev => prev.filter((_, i) => i !== idx))}
+                        style={{
+                          position: 'absolute', top: '4px', right: '4px',
+                          background: '#ef4444', border: 'none', color: '#fff',
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          cursor: 'pointer', fontSize: '0.75rem', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', padding: 0
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload area */}
+              <label
+                htmlFor="fb-blog-upload"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '1rem',
+                  borderRadius: '16px',
+                  border: `3px dashed ${fbQ4Files.length >= 2 ? '#10b981' : '#ef4444'}`,
+                  backgroundColor: fbQ4Files.length >= 2 ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.04)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+              >
+                <span style={{ fontSize: '1.8rem' }}>📸</span>
+                <span style={{ fontFamily: 'Outfit', fontSize: '0.85rem', color: 'var(--text-navy)', opacity: 0.8 }}>
+                  {fbQ4Files.length === 0
+                    ? 'Click to add photos / videos from the event'
+                    : `${fbQ4Files.length} file${fbQ4Files.length > 1 ? 's' : ''} added — click to add more`}
+                </span>
+                {/* Progress indicator */}
+                <span style={{
+                  fontFamily: 'Fredoka One',
+                  fontSize: '0.8rem',
+                  color: fbQ4Files.length >= 2 ? '#10b981' : '#ef4444'
+                }}>
+                  {fbQ4Files.length}/2 minimum {fbQ4Files.length >= 2 ? '✓' : 'required'}
+                </span>
+              </label>
+              <input
+                id="fb-blog-upload"
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (!files.length) return;
+                  const newItems = files.map(f => ({ file: f, preview: URL.createObjectURL(f) }));
+                  setFbQ4Files(prev => [...prev, ...newItems]);
+                  // Reset input so same file can be re-added
+                  e.target.value = '';
+                }}
+              />
+            </div>
+
+            {/* Q5 — Place to improve (MANDATORY) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontFamily: 'Fredoka One', fontSize: '1rem', color: 'var(--text-navy)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                5. Place to improve — what we lack?
+                <span style={{ color: '#ef4444', fontSize: '1.1rem' }}>*</span>
+              </label>
+              <textarea
+                value={fbQ5}
+                onChange={(e) => setFbQ5(e.target.value)}
+                placeholder="Be honest — what could we have done better? What was missing or could be improved for next time?"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  borderRadius: '16px',
+                  border: `3px solid ${fbQ5.trim() ? '#10b981' : 'var(--text-navy)'}`,
+                  backgroundColor: '#fffdf9',
+                  color: 'var(--text-navy)',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                  outline: 'none',
+                  lineHeight: '1.5',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Mandatory field notice */}
+            <p style={{ fontFamily: 'Outfit', fontSize: '0.82rem', color: '#ef4444', margin: 0, opacity: 0.9 }}>
+              <span style={{ fontWeight: 'bold' }}>*</span> Questions 1, 2, 4 and 5 are mandatory.
+            </p>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
               <button
                 className="btn-secondary"
                 onClick={() => setShowFeedbackModal(false)}
@@ -12078,14 +12373,14 @@ function App() {
                 style={{
                   flex: 2,
                   padding: '1rem 1.5rem',
-                  opacity: (getWordCount(feedbackText) >= 100 && !isSubmittingFeedback) ? 1 : 0.5,
-                  cursor: (getWordCount(feedbackText) >= 100 && !isSubmittingFeedback) ? 'pointer' : 'not-allowed',
+                  opacity: (fbQ1.trim() && fbQ2.trim() && fbQ4Files.length >= 2 && fbQ5.trim() && !isSubmittingFeedback) ? 1 : 0.5,
+                  cursor: (fbQ1.trim() && fbQ2.trim() && fbQ4Files.length >= 2 && fbQ5.trim() && !isSubmittingFeedback) ? 'pointer' : 'not-allowed',
                   background: 'linear-gradient(135deg, #ffd700, #ff8c00)',
                   color: '#001f3f',
                   border: '3.5px solid var(--text-navy)',
                   fontFamily: 'Fredoka One'
                 }}
-                disabled={getWordCount(feedbackText) < 100 || isSubmittingFeedback}
+                disabled={!fbQ1.trim() || !fbQ2.trim() || fbQ4Files.length < 2 || !fbQ5.trim() || isSubmittingFeedback}
               >
                 {isSubmittingFeedback ? 'SUBMITTING...' : 'SUBMIT & UNLOCK CERTIFICATE ✦'}
               </button>
