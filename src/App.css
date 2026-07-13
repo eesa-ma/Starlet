@@ -9688,7 +9688,8 @@ input:checked+.a11y-slider:before {
     transition: transform 0.5s ease;
 }
 
-.winner-podium-card:hover .winner-team-photo {
+.winner-podium-card:hover .winner-team-photo,
+.winner-special-card:hover .winner-team-photo {
     transform: scale(1.08);
 }
 
