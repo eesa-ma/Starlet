@@ -2439,6 +2439,79 @@ function App() {
     }
   };
 
+  const winnerProfileMapping = {
+    // She code
+    "Ayisha shana perumballi": "2b8b0f89-a79d-4dcf-a272-e428885ffb47",
+    "Fayiza KH": "70677c0a-4c81-425d-a71c-effb5e37fb85",
+    "SAFEENA K S": "ae7309d9-0a0d-4e2e-b11d-a4400dbd8c00",
+    // Stack 3
+    "Kavery Sayal": "3326a1f9-df4f-42db-a0bd-0d4da08bc023",
+    "Iba Lutf": "c1dcd912-a752-4465-bc53-6510f33afede",
+    "Kathrin James": "05d48ae9-2c79-4036-bab5-c1730da16f22",
+    // Algora
+    "Jaseera P A": "f34c4bf5-496b-42eb-bd0b-ac37fcce4cd2",
+    "Fasla MK": "1e9f3a7a-9385-4a72-b56b-8484c937f6de",
+    "Medha GS": "7e9029e6-9b0f-44dd-99e8-d2c0fa6555a6",
+    // Bloom X
+    "Glynal Rose James": "a6a855b7-67e6-46f6-ab1a-b9f2ff9e0350",
+    "Drishya V D": "ada2e601-5003-43b9-a295-7749ab81c3d5",
+    "Rida Alhaan J S": "6d8b83b5-6df5-4e64-ad40-1906e388db3d",
+    // Zenith
+    "Sreelakshmi.s": "b19dc2b5-7f67-4897-8961-538457e3bc5a",
+    "Adiya s": "6d77f94f-5de0-4947-b09e-337414c9a78f",
+    "Sreeparvathy anand": "ba8a0bc7-be9b-4bbd-8fe2-3b91ecbe0d4e",
+    // AVAT
+    "Aparna": "b22c30ee-f625-4e9c-aeb1-d586bdeab03e",
+    "Vishnupriya": "f1fdd6de-47fc-4eeb-8af7-1aef7b56a067",
+    "Anuskha": "e2f58ae1-f5a9-409a-8b0d-fd10fbd1c7e0",
+    "Thejasree": "acf3a1f9-4fea-419c-bcef-dd4bf14c0c31"
+  };
+
+  const handleWinnerProfileClick = async (name) => {
+    const preMappedId = winnerProfileMapping[name];
+    if (preMappedId) {
+      handleViewUserProfile(preMappedId);
+      return;
+    }
+
+    try {
+      const searchName = name.replace(/\./g, ' ').trim();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('full_name', `%${searchName}%`)
+        .limit(1);
+
+      if (error) {
+        console.error("Error doing fallback search for winner profile:", error);
+        alert(`Could not find profile for ${name}`);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        handleViewUserProfile(data[0].id);
+      } else {
+        const words = searchName.split(/\s+/).filter(w => w.length > 2);
+        if (words.length > 0) {
+          const { data: partialData } = await supabase
+            .from('profiles')
+            .select('id')
+            .ilike('full_name', `%${words[0]}%`)
+            .limit(1);
+
+          if (partialData && partialData.length > 0) {
+            handleViewUserProfile(partialData[0].id);
+            return;
+          }
+        }
+        alert(`Profile for "${name}" is not registered on Starlet yet!`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Error loading profile for ${name}`);
+    }
+  };
+
   const handleViewUserProfile = async (userId) => {
     if (session?.user?.id && userId === session.user.id) {
       setActiveView('profile');
@@ -5282,7 +5355,7 @@ function App() {
         <div className="sparkle s2">✧</div>
         <div className="sparkle s3">✦</div>
 
-        <header className={activeView !== 'landing' && activeView !== 'sponsors-overview' && activeView !== 'profile' && activeView !== 'audit-logs' && activeView !== 'blog' && activeView !== 'profile-view' && activeView !== 'venue' && activeView !== 'showroom' ? 'header-minimal' : ''}>
+        <header className={activeView !== 'landing' && activeView !== 'sponsors-overview' && activeView !== 'profile' && activeView !== 'audit-logs' && activeView !== 'blog' && activeView !== 'profile-view' && activeView !== 'venue' && activeView !== 'showroom' && activeView !== 'winners' ? 'header-minimal' : ''}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <div className="logo-circle" onClick={navigateToLanding} style={{ cursor: 'pointer' }}>
               <img src="brand/Logo.png" alt="Starlet Logo" />
@@ -5292,7 +5365,7 @@ function App() {
             </span>
           </div>
 
-          {(activeView === 'landing' || activeView === 'blog' || activeView === 'profile-view' || activeView === 'venue' || activeView === 'showroom') && (
+          {(activeView === 'landing' || activeView === 'blog' || activeView === 'profile-view' || activeView === 'venue' || activeView === 'showroom' || activeView === 'winners') && (
             <>
               <nav className={`nav-links ${isMenuOpen ? 'mobile-active' : ''}`}>
                 <>
@@ -5305,6 +5378,7 @@ function App() {
                   <a href="#contact" className="nav-link" onClick={(e) => handleHomeNavClick('contact', e)}>Contact Us</a>
                   <a href="#" className={`nav-link ${activeView === 'showroom' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('showroom'); setIsMenuOpen(false); }}>Showroom</a>
                   <a href="#" className={`nav-link ${activeView === 'blog' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('blog'); setIsMenuOpen(false); }}>Blog</a>
+                  <a href="#" className={`nav-link ${activeView === 'winners' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('winners'); setIsMenuOpen(false); }}>Winners</a>
                 </>
 
                 <div className="mobile-auth-wrapper">
@@ -10356,83 +10430,219 @@ function App() {
           </div>
         </div>
       ) : activeView === 'winners' ? (
-        <div className="winners-container" style={{ padding: '4rem 1rem', minHeight: '100vh', background: 'var(--bg-cream)' }}>
-          <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center', animation: 'fadeIn 0.5s ease-out' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'tada 1.5s infinite' }}>🏆</div>
-            <h1 className="text-3d" style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', marginBottom: '1rem', color: 'var(--pink-primary)' }}>
+        <div className="winners-container">
+          <div className="winners-header-wrapper">
+            <img src="svg/emoji/prize.svg" className="winners-header-trophy" alt="Trophy" />
+            <h1 className="text-3d" style={{ fontSize: 'clamp(2.5rem, 8vw, 4.2rem)', marginBottom: '1rem', color: 'var(--pink-primary)' }}>
               Hackathon Winners
             </h1>
-            <p style={{ fontSize: '1.2rem', color: 'var(--text-navy)', marginBottom: '3rem', opacity: 0.9 }}>
-              Congratulations to all participants! Here are the winning projects of Starlet 5.0.
+            <p style={{ fontSize: '1.25rem', color: 'var(--text-navy)', opacity: 0.9, lineHeight: 1.6 }}>
+              Celebrating excellence, creativity, and impact. Congratulations to all the winning teams of the Starlet Hackathon!
             </p>
+          </div>
 
-            <div className="winners-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-              {/* 1st Place */}
-              <div className="winner-card" style={{ background: '#fff', border: '4px solid #FFD700', borderRadius: '24px', padding: '2.5rem 1.5rem', position: 'relative', boxShadow: '8px 8px 0px #FFD700', transform: 'scale(1.05)', zIndex: 2 }}>
-                <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', fontSize: '3.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}>🥇</div>
-                <h2 style={{ fontFamily: 'Fredoka One', color: '#B8860B', fontSize: '1.8rem', marginTop: '1rem', marginBottom: '0.5rem' }}>1st Place</h2>
-                {(() => {
-                  const w = getWinnerDetails(settings.winner_1st_email);
-                  if (!w) return <p>Pending Announcement...</p>;
-                  return (
-                    <>
-                      <h3 style={{ fontSize: '1.5rem', color: 'var(--text-navy)', margin: '0.5rem 0' }}>{w.project}</h3>
-                      <p style={{ fontWeight: 'bold', color: 'var(--pink-primary)', margin: 0 }}>Team: {w.team}</p>
-                      {w.demoUrl && <a href={w.demoUrl} target="_blank" rel="noreferrer" className="join-btn" style={{ display: 'inline-block', marginTop: '1.5rem', background: '#FFD700', color: '#000', textDecoration: 'none' }}>View Demo</a>}
-                    </>
-                  );
-                })()}
+          <div className="winners-podium-grid">
+            {/* 2nd Place Card */}
+            <div className="winner-podium-card winner-rank-2nd">
+              <div className="winner-badge-icon">
+                <img src="svg/emoji/prize.svg" alt="2nd Place Trophy" />
               </div>
-
-              {/* 2nd Place */}
-              <div className="winner-card" style={{ background: '#fff', border: '4px solid #C0C0C0', borderRadius: '24px', padding: '2rem 1.5rem', position: 'relative', boxShadow: '8px 8px 0px #C0C0C0' }}>
-                <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', fontSize: '3.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}>🥈</div>
-                <h2 style={{ fontFamily: 'Fredoka One', color: '#808080', fontSize: '1.5rem', marginTop: '1rem', marginBottom: '0.5rem' }}>2nd Place</h2>
-                {(() => {
-                  const w = getWinnerDetails(settings.winner_2nd_email);
-                  if (!w) return <p>Pending Announcement...</p>;
-                  return (
-                    <>
-                      <h3 style={{ fontSize: '1.3rem', color: 'var(--text-navy)', margin: '0.5rem 0' }}>{w.project}</h3>
-                      <p style={{ fontWeight: 'bold', color: 'var(--pink-primary)', margin: 0 }}>Team: {w.team}</p>
-                      {w.demoUrl && <a href={w.demoUrl} target="_blank" rel="noreferrer" className="join-btn" style={{ display: 'inline-block', marginTop: '1.5rem', background: '#C0C0C0', color: '#000', textDecoration: 'none' }}>View Demo</a>}
-                    </>
-                  );
-                })()}
+              <div>
+                <h2 className="winner-rank-title">2nd Place</h2>
+                <div className="winner-team-tag">Team: Stack 3</div>
+                <h3 className="winner-project-title">graphoscan</h3>
+                <div className="winner-team-photo-container">
+                  <img src="winners/2.png" className="winner-team-photo" alt="2nd Place Winner Team Photo" />
+                </div>
+                <p className="winner-project-desc">
+                  An AI-powered tool diagnosing handwriting disabilities like dysgraphia by scanning uploaded handwriting images, helping highlight signs for early intervention and referral.
+                </p>
               </div>
-
-              {/* 3rd Place */}
-              <div className="winner-card" style={{ background: '#fff', border: '4px solid #CD7F32', borderRadius: '24px', padding: '2rem 1.5rem', position: 'relative', boxShadow: '8px 8px 0px #CD7F32' }}>
-                <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', fontSize: '3.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}>🥉</div>
-                <h2 style={{ fontFamily: 'Fredoka One', color: '#8B4513', fontSize: '1.5rem', marginTop: '1rem', marginBottom: '0.5rem' }}>3rd Place</h2>
-                {(() => {
-                  const w = getWinnerDetails(settings.winner_3rd_email);
-                  if (!w) return <p>Pending Announcement...</p>;
-                  return (
-                    <>
-                      <h3 style={{ fontSize: '1.3rem', color: 'var(--text-navy)', margin: '0.5rem 0' }}>{w.project}</h3>
-                      <p style={{ fontWeight: 'bold', color: 'var(--pink-primary)', margin: 0 }}>Team: {w.team}</p>
-                      {w.demoUrl && <a href={w.demoUrl} target="_blank" rel="noreferrer" className="join-btn" style={{ display: 'inline-block', marginTop: '1.5rem', background: '#CD7F32', color: '#fff', textDecoration: 'none' }}>View Demo</a>}
-                    </>
-                  );
-                })()}
+              <div>
+                <h4 className="winner-members-heading">Team Members</h4>
+                <div className="winner-members-list">
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Kavery Sayal")}>Kavery Sayal</span>
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Iba Lutf")}>Iba Lutf</span>
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Kathrin James")}>Kathrin James</span>
+                </div>
+                <div className="winner-college-info">
+                  <img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> Model engineering college Thrikkakara
+                </div>
+                <div className="winner-card-footer">
+                  <a href="https://github.com/ibalutf2008-cell/Stackthree.git" target="_blank" rel="noreferrer" className="winner-action-btn github-btn">
+                    GitHub Code
+                  </a>
+                </div>
               </div>
+            </div>
 
+            {/* 1st Place Card */}
+            <div className="winner-podium-card winner-rank-1st">
+              <div className="winner-badge-icon">
+                <img src="svg/emoji/crown.svg" alt="1st Place Crown" />
+              </div>
+              <div>
+                <h2 className="winner-rank-title">1st Place</h2>
+                <div className="winner-team-tag">Team: She code</div>
+                <h3 className="winner-project-title">Mudra</h3>
+                <div className="winner-team-photo-container">
+                  <img src="winners/1.png" className="winner-team-photo" alt="1st Place Winner Team Photo" />
+                </div>
+                <p className="winner-project-desc">
+                  Mudra is an AI-powered inclusive dance learning platform designed specifically for deaf and hard-of-hearing children. Using body pose estimation and visual guidance, it converts beats to colorful light cues so kids can experience dance without sound.
+                </p>
+              </div>
+              <div>
+                <h4 className="winner-members-heading">Team Members</h4>
+                <div className="winner-members-list">
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Ayisha shana perumballi")}>Ayisha Shana</span>
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Fayiza KH")}>Fayiza K H</span>
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("SAFEENA K S")}>Safeena K S</span>
+                </div>
+                <div className="winner-college-info" style={{ flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                  <span><img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> Adi Shankara Institute (Ayisha, Fayiza)</span>
+                  <span><img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> Muthoot Institute (Safeena)</span>
+                </div>
+                <div className="winner-card-footer">
+                  <a href="https://github.com/safeenaks/mudra" target="_blank" rel="noreferrer" className="winner-action-btn github-btn">
+                    GitHub Code
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* 3rd Place Card */}
+            <div className="winner-podium-card winner-rank-3rd">
+              <div className="winner-badge-icon">
+                <img src="svg/emoji/prize.svg" alt="3rd Place Trophy" />
+              </div>
+              <div>
+                <h2 className="winner-rank-title">3rd Place</h2>
+                <div className="winner-team-tag">Team: Algora</div>
+                <h3 className="winner-project-title">Tinytalks</h3>
+                <div className="winner-team-photo-container">
+                  <img src="winners/3.png" className="winner-team-photo" alt="3rd Place Winner Team Photo" />
+                </div>
+                <p className="winner-project-desc">
+                  Bridging the gap between deaf parents and infants. Features include smart baby cry detection with vibration alerts and babbling translation integrated with interactive sign-language visual picture books.
+                </p>
+              </div>
+              <div>
+                <h4 className="winner-members-heading">Team Members</h4>
+                <div className="winner-members-list">
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Jaseera P A")}>Jaseera P A</span>
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Fasla MK")}>Fasla M K</span>
+                  <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Medha GS")}>Medha G S</span>
+                </div>
+                <div className="winner-college-info">
+                  <img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> CUSAT, School of Engineering
+                </div>
+                <div className="winner-card-footer">
+                  <a href="https://github.com/medha67/tinytalks.git" target="_blank" rel="noreferrer" className="winner-action-btn github-btn">
+                    GitHub Code
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="winners-special-section">
+            <h2 className="winners-special-title text-3d" style={{ textShadow: '2px 2px 0px var(--blue-shadow)' }}>
+              Special Recognition Awards
+            </h2>
+            <div className="winners-special-grid">
               {/* Best Innovation */}
-              <div className="winner-card" style={{ background: '#fff', border: '4px solid #00BFFF', borderRadius: '24px', padding: '2.5rem 1.5rem', position: 'relative', boxShadow: '8px 8px 0px #00BFFF', gridColumn: '1 / -1', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-                <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', fontSize: '3.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }}>💡</div>
-                <h2 style={{ fontFamily: 'Fredoka One', color: '#008B8B', fontSize: '1.8rem', marginTop: '1rem', marginBottom: '0.5rem' }}>Best Innovation</h2>
-                {(() => {
-                  const w = getWinnerDetails(settings.winner_innovation_email);
-                  if (!w) return <p>Pending Announcement...</p>;
-                  return (
-                    <>
-                      <h3 style={{ fontSize: '1.5rem', color: 'var(--text-navy)', margin: '0.5rem 0' }}>{w.project}</h3>
-                      <p style={{ fontWeight: 'bold', color: 'var(--pink-primary)', margin: 0 }}>Team: {w.team}</p>
-                      {w.demoUrl && <a href={w.demoUrl} target="_blank" rel="noreferrer" className="join-btn" style={{ display: 'inline-block', marginTop: '1.5rem', background: '#00BFFF', color: '#fff', textDecoration: 'none' }}>View Demo</a>}
-                    </>
-                  );
-                })()}
+              <div className="winner-special-card">
+                <div className="winner-special-badge-icon">
+                  <img src="svg/emoji/idea.svg" alt="Best Innovation Icon" />
+                </div>
+                <div>
+                  <h2 className="winner-rank-title">Best Innovation</h2>
+                  <div className="winner-team-tag">Team: Bloom X</div>
+                  <h3 className="winner-project-title">PROJECT BLOOM</h3>
+                  <p className="winner-project-desc" style={{ marginTop: '1rem' }}>
+                    A menstrual hygiene educational platform designed specifically for autistic students. By using highly visual elements and structured pathways, it builds menstruation knowledge and independence in a safe, supportive environment.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="winner-members-heading">Team Members</h4>
+                  <div className="winner-members-list">
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Glynal Rose James")}>Glynal Rose</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Drishya V D")}>Drishya V D</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Rida Alhaan J S")}>Rida Alhaan</span>
+                  </div>
+                  <div className="winner-college-info">
+                    <img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> Adi Shankara Institute of Eng. & Tech.
+                  </div>
+                  <div className="winner-card-footer" style={{ marginTop: '1rem' }}>
+                    <a href="https://github.com/Rida168" target="_blank" rel="noreferrer" className="winner-action-btn github-btn">
+                      GitHub Code
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Best Hardware */}
+              <div className="winner-special-card">
+                <div className="winner-special-badge-icon">
+                  <img src="svg/emoji/robot.svg" alt="Best Hardware Icon" />
+                </div>
+                <div>
+                  <h2 className="winner-rank-title">Best Hardware</h2>
+                  <div className="winner-team-tag">Team: Zenith</div>
+                  <h3 className="winner-project-title">HAPTINAV</h3>
+                  <p className="winner-project-desc" style={{ marginTop: '1rem' }}>
+                    A wearable assistive device (cap and glove duo) for visually impaired individuals. Ultrasonic sensors measure obstacle proximity in front and on the ground, wirelessly communicating to servo-actuated glove indicators.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="winner-members-heading">Team Members</h4>
+                  <div className="winner-members-list">
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Sreelakshmi.s")}>Sreelakshmi S</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Adiya s")}>Adiya S</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Sreeparvathy anand")}>Sreeparvathy A</span>
+                  </div>
+                  <div className="winner-college-info">
+                    <img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> Amrita School of Engineering, Amritapuri
+                  </div>
+                  <div className="winner-card-footer" style={{ marginTop: '1rem' }}>
+                    <a href="https://github.com/sreeparvathy2007/HaptiNav" target="_blank" rel="noreferrer" className="winner-action-btn github-btn">
+                      GitHub Code
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Accessibility Prize */}
+              <div className="winner-special-card">
+                <div className="winner-special-badge-icon">
+                  <img src="svg/emoji/speak.svg" alt="Accessibility Icon" />
+                </div>
+                <div>
+                  <h2 className="winner-rank-title">Accessibility Prize</h2>
+                  <div className="winner-team-tag">Team: AVAT</div>
+                  <h3 className="winner-project-title">Sign translator</h3>
+                  <p className="winner-project-desc" style={{ marginTop: '1rem' }}>
+                    An AI-powered real-time translation communication bridge converting camera gestures to text/speech output, and vice versa. Intended to enhance accessibility in hospitals, schools, and offices.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="winner-members-heading">Team Members</h4>
+                  <div className="winner-members-list">
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Aparna")}>Aparna Binu</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Vishnupriya")}>Vishnupriya V</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Anuskha")}>Anushka C</span>
+                    <span className="winner-member-link" title="Click to view profile" onClick={() => handleWinnerProfileClick("Thejasree")}>Thejasree</span>
+                  </div>
+                  <div className="winner-college-info">
+                    <img src="svg/emoji/company.svg" className="emoji-icon" alt="College Icon" style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }} /> National Institute of Speech and Hearing
+                  </div>
+                  <div className="winner-card-footer" style={{ marginTop: '1rem' }}>
+                    <a href="https://github.com/Vishnupriyakunjus/sign-translator" target="_blank" rel="noreferrer" className="winner-action-btn github-btn">
+                      GitHub Code
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

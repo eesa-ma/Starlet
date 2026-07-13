@@ -9563,3 +9563,351 @@ input:checked+.a11y-slider:before {
         max-width: calc(100% - 68px);
     }
 }
+
+/* 🏆 HACKATHON WINNERS STYLES */
+.winners-container {
+    padding: 6rem 2rem 4rem;
+    min-height: 100vh;
+    background-color: var(--bg-cream);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.winners-header-wrapper {
+    text-align: center;
+    max-width: 900px;
+    margin-bottom: 4rem;
+}
+
+.winners-header-trophy {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 1.5rem;
+    animation: winners-tada 2s infinite ease-in-out;
+}
+
+.winners-podium-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+    max-width: 1200px;
+    width: 100%;
+    margin-bottom: 5rem;
+    align-items: end;
+}
+
+.winner-podium-card {
+    background: #ffffff;
+    border: 4px solid var(--text-navy) !important;
+    border-radius: 30px !important;
+    padding: 2.5rem 1.8rem;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+}
+
+/* Card Ranks specific styles and shadows */
+.winner-rank-1st {
+    box-shadow: 12px 12px 0px var(--yellow-star) !important;
+    order: 2; /* 1st place in the middle */
+    z-index: 3;
+    padding-top: 3.5rem;
+}
+.winner-rank-2nd {
+    box-shadow: 12px 12px 0px var(--blue-shadow) !important;
+    order: 1; /* 2nd place on left */
+    z-index: 2;
+    padding-top: 3rem;
+}
+.winner-rank-3rd {
+    box-shadow: 12px 12px 0px var(--pink-primary) !important;
+    order: 3; /* 3rd place on right */
+    z-index: 1;
+    padding-top: 3rem;
+}
+
+.winner-podium-card:hover,
+.winner-special-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 15px 15px 0px var(--yellow-star) !important;
+}
+
+.winner-badge-icon {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    border: 4px solid var(--text-navy) !important;
+    border-radius: 50% !important;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 4px 0px var(--text-navy);
+    z-index: 10;
+}
+
+.winner-badge-icon img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.winner-rank-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+.winner-rank-1st .winner-rank-title { color: #D4AF37; }
+.winner-rank-2nd .winner-rank-title { color: #8A95A5; }
+.winner-rank-3rd .winner-rank-title { color: #A0522D; }
+
+.winner-team-photo-container {
+    width: 100%;
+    height: 200px;
+    border-radius: 18px;
+    overflow: hidden;
+    margin: 1.2rem 0;
+    border: 3px solid var(--text-navy);
+    box-shadow: 4px 4px 0px var(--text-navy);
+    background-color: #f0f0f0;
+}
+
+.winner-team-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.winner-podium-card:hover .winner-team-photo {
+    transform: scale(1.08);
+}
+
+.winner-project-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: var(--text-navy);
+    margin: 0.5rem 0;
+    line-height: 1.2;
+}
+
+.winner-team-tag {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    color: var(--pink-primary);
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+}
+
+.winner-project-desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    text-align: justify;
+}
+
+.winner-members-heading {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: var(--text-navy);
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.winner-members-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.winner-member-link {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    background-color: var(--bg-cream);
+    color: var(--text-navy);
+    border: 3px solid var(--text-navy);
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 3px 3px 0px var(--text-navy);
+    display: inline-block;
+}
+
+.winner-member-link:hover {
+    background-color: var(--pink-primary);
+    color: #fff;
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0px var(--text-navy);
+}
+
+.winner-card-footer {
+    margin-top: auto;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.winner-action-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 16px;
+    border: 3px solid var(--text-navy);
+    text-decoration: none;
+    color: #000;
+    background-color: var(--yellow-star);
+    box-shadow: 3px 3px 0px var(--text-navy);
+    transition: all 0.2s ease;
+}
+
+.winner-action-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0px var(--text-navy);
+}
+
+.winner-action-btn.github-btn {
+    background-color: #f6f8fa;
+    color: #24292e;
+}
+
+/* 🏅 SPECIAL AWARDS SECTION */
+.winners-special-section {
+    max-width: 1200px;
+    width: 100%;
+}
+
+.winners-special-title {
+    font-family: 'Fredoka One', cursive;
+    text-align: center;
+    font-size: 2.2rem;
+    color: var(--text-navy);
+    margin: 2rem 0 3rem;
+    position: relative;
+}
+
+.winners-special-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    width: 100%;
+}
+
+.winner-special-card {
+    background: #ffffff;
+    border: 4px solid var(--text-navy) !important;
+    border-radius: 30px !important;
+    padding: 2.5rem 1.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Alternating shadows for Special Recognition Awards */
+.winners-special-grid > div:nth-child(1) {
+    box-shadow: 12px 12px 0px var(--pink-primary) !important;
+}
+.winners-special-grid > div:nth-child(2) {
+    box-shadow: 12px 12px 0px var(--blue-shadow) !important;
+}
+.winners-special-grid > div:nth-child(3) {
+    box-shadow: 12px 12px 0px var(--yellow-star) !important;
+}
+
+.winner-special-badge-icon {
+    position: absolute;
+    top: -30px;
+    left: 30px;
+    background: #ffffff;
+    border: 4px solid var(--text-navy) !important;
+    border-radius: 50% !important;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 4px 0px var(--text-navy);
+    z-index: 10;
+}
+
+.winner-special-badge-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.winner-special-card .winner-rank-title {
+    margin-top: 0.5rem;
+    color: var(--pink-primary);
+    text-align: left;
+}
+
+.winner-special-card .winner-project-title {
+    font-size: 1.5rem;
+    text-align: left;
+}
+
+.winner-special-card .winner-team-tag {
+    text-align: left;
+}
+
+.winner-college-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Animations */
+@keyframes winners-tada {
+    0% { transform: scale(1); }
+    10%, 20% { transform: scale(0.9) rotate(-3deg); }
+    30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+    40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+
+/* Responsive Rules */
+@media (max-width: 1024px) {
+    .winners-podium-grid {
+        grid-template-columns: 1fr;
+        gap: 4rem;
+    }
+    .winner-rank-1st {
+        order: 1;
+    }
+    .winner-rank-2nd {
+        order: 2;
+    }
+    .winner-rank-3rd {
+        order: 3;
+    }
+    .winners-special-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .winners-special-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+}
