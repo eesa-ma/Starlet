@@ -514,6 +514,39 @@ function App() {
   const [fbQ4Files, setFbQ4Files] = useState([]); // [{file, preview}] — Upload blogs (mandatory, min 2)
   const [fbQ5, setFbQ5] = useState(''); // Place to improve (mandatory)
   const [selectedWinner, setSelectedWinner] = useState(null);
+  const confettiParticlesRef = useRef([]);
+
+  const triggerConfettiBurst = () => {
+    const canvas = document.getElementById('winners-confetti-canvas');
+    if (!canvas) return;
+    const colors = ['#ff5964', '#ffe74c', '#38a3a5', '#22577a', '#f72585', '#7209b7', '#3f37c9', '#4cc9f0'];
+    for (let i = 0; i < 80; i++) {
+      confettiParticlesRef.current.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * (canvas.height * 0.3),
+        size: Math.random() * 9 + 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        speedY: Math.random() * 5 + 3,
+        speedX: Math.random() * 6 - 3,
+        rotation: Math.random() * 360,
+        rotationSpeed: Math.random() * 10 - 5,
+        loop: false,
+        update() {
+          this.y += this.speedY;
+          this.x += this.speedX;
+          this.rotation += this.rotationSpeed;
+        },
+        draw(ctx) {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate((this.rotation * Math.PI) / 180);
+          ctx.fillStyle = this.color;
+          ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size / 1.5);
+          ctx.restore();
+        }
+      });
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -1480,6 +1513,78 @@ function App() {
 
     return () => observer.disconnect();
   }, [activeView, loading]);
+
+  useEffect(() => {
+    if (activeView === 'landing' && visibleSections.has('winners')) {
+      const canvas = document.getElementById('winners-confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let animationFrameId;
+
+      const resizeCanvas = () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+      };
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      const colors = ['#ff5964', '#ffe74c', '#38a3a5', '#22577a', '#f72585', '#7209b7', '#3f37c9', '#4cc9f0'];
+      
+      const initialParticles = [];
+      const particleCount = 60;
+      for (let i = 0; i < particleCount; i++) {
+        initialParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -canvas.height - 10,
+          size: Math.random() * 8 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speedY: Math.random() * 2 + 1.5,
+          speedX: Math.random() * 2 - 1,
+          rotation: Math.random() * 360,
+          rotationSpeed: Math.random() * 4 - 2,
+          loop: true,
+          update() {
+            this.y += this.speedY;
+            this.x += this.speedX;
+            this.rotation += this.rotationSpeed;
+          },
+          draw(ctx) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate((this.rotation * Math.PI) / 180);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size / 1.5);
+            ctx.restore();
+          }
+        });
+      }
+      confettiParticlesRef.current = initialParticles;
+
+      const tick = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiParticlesRef.current = confettiParticlesRef.current.filter(p => {
+          p.update();
+          p.draw(ctx);
+          if (p.y > canvas.height + 20) {
+            if (p.loop) {
+              p.y = -20;
+              p.x = Math.random() * canvas.width;
+              return true;
+            }
+            return false;
+          }
+          return true;
+        });
+        animationFrameId = requestAnimationFrame(tick);
+      };
+      tick();
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+        window.removeEventListener('resize', resizeCanvas);
+      };
+    }
+  }, [visibleSections, activeView]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -5678,8 +5783,9 @@ function App() {
                   className={`section-block ${section.type}-section ${visibleSections.has(section.type) ? 'visible' : ''}`}
                 >
                   {section.type === 'winners' ? (
-                    <div className="winners-container" style={{ padding: '2rem 1rem', background: 'transparent' }}>
-                      <div className="winners-header-wrapper" style={{ marginBottom: '3rem' }}>
+                    <div className="winners-container" style={{ padding: '2rem 1rem', background: 'transparent', position: 'relative', overflow: 'hidden' }}>
+                      <canvas id="winners-confetti-canvas" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }} />
+                      <div className="winners-header-wrapper" style={{ marginBottom: '3rem', position: 'relative', zIndex: 2 }}>
                         <img src="svg/emoji/prize.svg" className="winners-header-trophy" alt="Trophy" />
                         <h2 className="text-3d" style={{ color: 'var(--pink-primary)', margin: '0.5rem 0' }}>
                           {section.title}
@@ -5689,12 +5795,12 @@ function App() {
                         </p>
                       </div>
 
-                      <div className="winners-podium-grid">
+                      <div className="winners-podium-grid" style={{ position: 'relative', zIndex: 2 }}>
                         {/* 2nd Place */}
                         {(() => {
                           const w = winnersData.find(x => x.rank === "2nd Place");
                           return (
-                            <div className="winner-podium-card winner-rank-2nd" onClick={() => setSelectedWinner(w)} style={{ cursor: 'pointer' }}>
+                            <div className="winner-podium-card winner-rank-2nd" onClick={() => { setSelectedWinner(w); triggerConfettiBurst(); }} style={{ cursor: 'pointer' }}>
                               <div className="winner-badge-icon">
                                 <img src={w.emoji} alt="" />
                               </div>
@@ -5716,7 +5822,7 @@ function App() {
                         {(() => {
                           const w = winnersData.find(x => x.rank === "1st Place");
                           return (
-                            <div className="winner-podium-card winner-rank-1st" onClick={() => setSelectedWinner(w)} style={{ cursor: 'pointer' }}>
+                            <div className="winner-podium-card winner-rank-1st" onClick={() => { setSelectedWinner(w); triggerConfettiBurst(); }} style={{ cursor: 'pointer' }}>
                               <div className="winner-badge-icon">
                                 <img src={w.emoji} alt="" />
                               </div>
@@ -5738,7 +5844,7 @@ function App() {
                         {(() => {
                           const w = winnersData.find(x => x.rank === "3rd Place");
                           return (
-                            <div className="winner-podium-card winner-rank-3rd" onClick={() => setSelectedWinner(w)} style={{ cursor: 'pointer' }}>
+                            <div className="winner-podium-card winner-rank-3rd" onClick={() => { setSelectedWinner(w); triggerConfettiBurst(); }} style={{ cursor: 'pointer' }}>
                               <div className="winner-badge-icon">
                                 <img src={w.emoji} alt="" />
                               </div>
@@ -5757,13 +5863,13 @@ function App() {
                         })()}
                       </div>
 
-                      <div className="winners-special-section">
+                      <div className="winners-special-section" style={{ position: 'relative', zIndex: 2 }}>
                         <h3 className="winners-special-title text-3d" style={{ textShadow: '2px 2px 0px var(--blue-shadow)', marginBottom: '3rem', fontSize: '2rem' }}>
                           Special Recognition Awards
                         </h3>
                         <div className="winners-special-grid">
                           {winnersData.filter(x => !x.rank.includes("Place")).map((w) => (
-                            <div key={w.rank} className="winner-special-card" onClick={() => setSelectedWinner(w)} style={{ cursor: 'pointer' }}>
+                            <div key={w.rank} className="winner-special-card" onClick={() => { setSelectedWinner(w); triggerConfettiBurst(); }} style={{ cursor: 'pointer' }}>
                               <div className="winner-special-badge-icon">
                                 <img src={w.emoji} alt="" />
                               </div>
