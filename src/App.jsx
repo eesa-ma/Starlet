@@ -456,6 +456,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeView, setActiveView] = useState('landing'); // landing, login, signup, profile
+  const [profileViewBackTarget, setProfileViewBackTarget] = useState('blog');
   const [adminActiveTab, setAdminActiveTab] = useState('admin'); // admin or mentor
   const [expandedUserId, setExpandedUserId] = useState(null);
   const [expandedPendingMentorId, setExpandedPendingMentorId] = useState(null);
@@ -2202,7 +2203,7 @@ function App() {
                     bio: data.bio || '',
                     avatarUrl: data.avatar_url || '',
                     teamName: data.team_name || '',
-                    trackId: data.track_id || '',
+                    trackId: data.problem_statement_id || '',
                     socials: {
                       github: data.github_url || '',
                       linkedin: data.linkedin_url || '',
@@ -2581,6 +2582,7 @@ function App() {
   };
 
   const handleWinnerProfileClick = async (name) => {
+    setProfileViewBackTarget('landing');
     const preMappedId = winnerProfileMapping[name];
     if (preMappedId) {
       handleViewUserProfile(preMappedId);
@@ -2653,7 +2655,7 @@ function App() {
           avatarUrl: profile.avatar_url,
           bio: profile.bio || '',
           teamName: profile.team_name || '',
-          trackId: profile.track_id || '',
+          trackId: profile.problem_statement_id || '',
           college: profile.college || '',
           stack: profile.stack || [],
           venue: profile.venue || '',
@@ -10117,7 +10119,7 @@ function App() {
                     <div key={post.id} className="blog-post-card">
                       {/* Post Header */}
                       <div className="blog-post-header">
-                        <div className="blog-post-author" onClick={() => handleViewUserProfile(post.user_id)} style={{ cursor: 'pointer' }}>
+                        <div className="blog-post-author" onClick={() => { setProfileViewBackTarget('blog'); handleViewUserProfile(post.user_id); }} style={{ cursor: 'pointer' }}>
                           <div className="author-avatar">
                             <img
                               src={post.profiles?.avatar_url || 'icons/user-profile.svg'}
@@ -10502,8 +10504,8 @@ function App() {
               </div>
             )}
 
-            <button className="join-btn" style={{ marginTop: '2rem', width: '100%' }} onClick={() => setActiveView('blog')}>
-              BACK TO BLOG FEED
+            <button className="join-btn" style={{ marginTop: '2rem', width: '100%' }} onClick={() => setActiveView(profileViewBackTarget)}>
+              {profileViewBackTarget === 'blog' ? 'BACK TO BLOG FEED' : 'BACK TO HOME'}
             </button>
           </div>
 
@@ -12230,7 +12232,7 @@ function App() {
             <div className="blog-post-card" style={{ border: 'none', boxShadow: 'none', margin: 0, padding: 0 }}>
               {/* Post Header */}
               <div className="blog-post-header" style={{ padding: '0.8rem 1rem 0.5rem 1rem' }}>
-                <div className="blog-post-author" onClick={() => { handleViewUserProfile(activeViewPost.user_id); setActiveViewPost(null); }} style={{ cursor: 'pointer' }}>
+                <div className="blog-post-author" onClick={() => { setProfileViewBackTarget('blog'); handleViewUserProfile(activeViewPost.user_id); setActiveViewPost(null); }} style={{ cursor: 'pointer' }}>
                   <div className="author-avatar">
                     <img
                       src={activeViewPost.profiles?.avatar_url || 'icons/user-profile.svg'}
