@@ -188,6 +188,7 @@ const winnersData = [
     emoji: "svg/emoji/idea.svg",
     shadowColor: "var(--pink-primary)",
     desc: "A menstrual hygiene educational platform designed specifically for autistic students. By using highly visual elements and structured pathways, it builds menstruation knowledge and independence in a safe, supportive environment.",
+    objectFit: "contain",
     members: [
       { name: "Glynal Rose", dbName: "Glynal Rose James" },
       { name: "Drishya V D", dbName: "Drishya V D" },
@@ -5889,7 +5890,7 @@ function App() {
                                 <h3 className="winner-project-title">{w.project}</h3>
                                 {w.image && (
                                   <div className="winner-team-photo-container">
-                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center' }} alt="" />
+                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center', objectFit: w.objectFit || 'cover' }} alt="" />
                                   </div>
                                 )}
                               </div>
@@ -5918,7 +5919,7 @@ function App() {
                                 <h3 className="winner-project-title">{w.project}</h3>
                                 {w.image && (
                                   <div className="winner-team-photo-container">
-                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center' }} alt="" />
+                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center', objectFit: w.objectFit || 'cover' }} alt="" />
                                   </div>
                                 )}
                               </div>
@@ -5947,7 +5948,7 @@ function App() {
                                 <h3 className="winner-project-title">{w.project}</h3>
                                 {w.image && (
                                   <div className="winner-team-photo-container">
-                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center' }} alt="" />
+                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center', objectFit: w.objectFit || 'cover' }} alt="" />
                                   </div>
                                 )}
                               </div>
@@ -5979,7 +5980,7 @@ function App() {
                                 <h3 className="winner-project-title" style={{ fontSize: '1.5rem', textAlign: 'left' }}>{w.project}</h3>
                                 {w.image && (
                                   <div className="winner-team-photo-container">
-                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center' }} alt="" />
+                                    <img src={w.image} className="winner-team-photo" style={{ objectPosition: w.objectPosition || 'center', objectFit: w.objectFit || 'cover' }} alt="" />
                                   </div>
                                 )}
                               </div>
@@ -11478,7 +11479,7 @@ function App() {
                     style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover',
+                      objectFit: selectedWinner.objectFit || 'cover',
                       objectPosition: selectedWinner.objectPosition || 'center'
                     }}
                   />
