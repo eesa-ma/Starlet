@@ -200,7 +200,7 @@ const winnersData = [
     rank: "Best Hardware",
     team: "Zenith",
     project: "HAPTINAV",
-    image: null,
+    image: "winners/hardware.png",
     emoji: "svg/emoji/robot.svg",
     shadowColor: "var(--blue-shadow)",
     desc: "A wearable assistive device (cap and glove duo) for visually impaired individuals. Ultrasonic sensors measure obstacle proximity in front and on the ground, wirelessly communicating to servo-actuated glove indicators.",
@@ -515,37 +515,80 @@ function App() {
   const [fbQ5, setFbQ5] = useState(''); // Place to improve (mandatory)
   const [selectedWinner, setSelectedWinner] = useState(null);
   const confettiParticlesRef = useRef([]);
+  const modalConfettiParticlesRef = useRef([]);
 
-  const triggerConfettiBurst = () => {
-    const canvas = document.getElementById('winners-confetti-canvas');
+  const triggerConfettiBurst = (targetCanvas = null, targetParticlesRef = null) => {
+    const canvas = targetCanvas || document.getElementById('winners-confetti-canvas');
     if (!canvas) return;
-    const colors = ['#ff5964', '#ffe74c', '#38a3a5', '#22577a', '#f72585', '#7209b7', '#3f37c9', '#4cc9f0'];
-    for (let i = 0; i < 80; i++) {
-      confettiParticlesRef.current.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * (canvas.height * 0.3),
-        size: Math.random() * 9 + 5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        speedY: Math.random() * 5 + 3,
-        speedX: Math.random() * 6 - 3,
-        rotation: Math.random() * 360,
-        rotationSpeed: Math.random() * 10 - 5,
-        loop: false,
-        update() {
-          this.y += this.speedY;
-          this.x += this.speedX;
-          this.rotation += this.rotationSpeed;
-        },
-        draw(ctx) {
-          ctx.save();
-          ctx.translate(this.x, this.y);
-          ctx.rotate((this.rotation * Math.PI) / 180);
-          ctx.fillStyle = this.color;
-          ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size / 1.5);
-          ctx.restore();
-        }
-      });
-    }
+    const particlesRef = targetParticlesRef || confettiParticlesRef;
+    const colors = ['#ff5964', '#ffe74c', '#38a3a5', '#22577a', '#f72585', '#7209b7', '#3f37c9', '#4cc9f0', '#ff007f', '#00f5d4', '#ffcc00'];
+    
+    const createCannon = (startX, startY, baseAngleDeg, count) => {
+      const angleRad = (baseAngleDeg * Math.PI) / 180;
+      for (let i = 0; i < count; i++) {
+        const velocity = Math.random() * 18 + 12; // Fast launch
+        const spread = (Math.random() * 40 - 20) * Math.PI / 180; // Spread angle
+        const finalAngle = angleRad + spread;
+        
+        particlesRef.current.push({
+          x: startX,
+          y: startY,
+          size: Math.random() * 8 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speedX: Math.cos(finalAngle) * velocity,
+          speedY: Math.sin(finalAngle) * velocity,
+          gravity: 0.35,
+          friction: 0.97,
+          rotation: Math.random() * 360,
+          rotationSpeed: Math.random() * 14 - 7,
+          shape: Math.random() > 0.6 ? 'rect' : Math.random() > 0.5 ? 'circle' : 'triangle',
+          opacity: 1,
+          fadeSpeed: Math.random() * 0.015 + 0.005,
+          update() {
+            this.speedY += this.gravity;
+            this.speedX *= this.friction;
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.rotation += this.rotationSpeed;
+            if (this.y > canvas.height * 0.5) {
+              this.opacity -= this.fadeSpeed;
+            }
+          },
+          draw(ctx) {
+            if (this.opacity <= 0) return;
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate((this.rotation * Math.PI) / 180);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.opacity;
+            
+            if (this.shape === 'rect') {
+              ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size * 1.5);
+            } else if (this.shape === 'circle') {
+              ctx.beginPath();
+              ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(0, -this.size / 2);
+              ctx.lineTo(this.size / 2, this.size / 2);
+              ctx.lineTo(-this.size / 2, this.size / 2);
+              ctx.closePath();
+              ctx.fill();
+            }
+            ctx.restore();
+            ctx.globalAlpha = 1;
+          }
+        });
+      }
+    };
+
+    // Shoot from bottom left corner
+    createCannon(0, canvas.height, -45, 100);
+    // Shoot from bottom right corner
+    createCannon(canvas.width, canvas.height, -135, 100);
+    // Shoot from center bottom straight up
+    createCannon(canvas.width / 2, canvas.height, -90, 60);
   };
 
   useEffect(() => {
@@ -1585,6 +1628,42 @@ function App() {
       };
     }
   }, [visibleSections, activeView]);
+
+  useEffect(() => {
+    if (selectedWinner) {
+      const canvas = document.getElementById('modal-confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let animationFrameId;
+
+      const resizeCanvas = () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+      };
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // Trigger the burst on the modal canvas
+      triggerConfettiBurst(canvas, modalConfettiParticlesRef);
+
+      const tick = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        modalConfettiParticlesRef.current = modalConfettiParticlesRef.current.filter(p => {
+          p.update();
+          p.draw(ctx);
+          return p.opacity > 0 && p.y <= canvas.height + 20;
+        });
+        animationFrameId = requestAnimationFrame(tick);
+      };
+      tick();
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+        window.removeEventListener('resize', resizeCanvas);
+        modalConfettiParticlesRef.current = []; // Clear modal particles on close
+      };
+    }
+  }, [selectedWinner]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -5814,6 +5893,13 @@ function App() {
                                   </div>
                                 )}
                               </div>
+                              <button 
+                                type="button"
+                                className="winner-action-btn" 
+                                style={{ marginTop: '1.2rem', alignSelf: 'center', cursor: 'pointer' }}
+                              >
+                                View More
+                              </button>
                             </div>
                           );
                         })()}
@@ -5836,6 +5922,13 @@ function App() {
                                   </div>
                                 )}
                               </div>
+                              <button 
+                                type="button"
+                                className="winner-action-btn" 
+                                style={{ marginTop: '1.2rem', alignSelf: 'center', cursor: 'pointer' }}
+                              >
+                                View More
+                              </button>
                             </div>
                           );
                         })()}
@@ -5858,6 +5951,13 @@ function App() {
                                   </div>
                                 )}
                               </div>
+                              <button 
+                                type="button"
+                                className="winner-action-btn" 
+                                style={{ marginTop: '1.2rem', alignSelf: 'center', cursor: 'pointer' }}
+                              >
+                                View More
+                              </button>
                             </div>
                           );
                         })()}
@@ -5883,6 +5983,13 @@ function App() {
                                   </div>
                                 )}
                               </div>
+                              <button 
+                                type="button"
+                                className="winner-action-btn" 
+                                style={{ marginTop: '1.2rem', alignSelf: 'flex-start', cursor: 'pointer' }}
+                              >
+                                View More
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -11359,7 +11466,8 @@ function App() {
       )}
       {selectedWinner && (
         <div className="modal-overlay" onClick={() => setSelectedWinner(null)}>
-          <div className="modal-content about-modal winner-detail-modal" onClick={e => e.stopPropagation()}>
+          <canvas id="modal-confetti-canvas" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1001 }} />
+          <div className="modal-content about-modal winner-detail-modal" onClick={e => e.stopPropagation()} style={{ position: 'relative', zIndex: 1002 }}>
             <button className="modal-close" onClick={() => setSelectedWinner(null)}>×</button>
             <div className="modal-inner">
               {selectedWinner.image ? (
@@ -11376,9 +11484,10 @@ function App() {
                   />
                 </div>
               ) : (
-                <div className="modal-visual" style={{ background: 'var(--bg-cream)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
-                  <img src={selectedWinner.emoji} alt="" style={{ width: '120px', height: '120px', animation: 'winners-tada 2s infinite ease-in-out' }} />
-                  <span style={{ fontFamily: 'Fredoka One', marginTop: '1rem', color: 'var(--text-navy)', fontSize: '1.2rem' }}>Best Assistive Hardware</span>
+                <div className="modal-visual" style={{ background: 'var(--bg-cream)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+                  <div className="winner-sunburst" />
+                  <img src={selectedWinner.emoji} alt="" style={{ width: '120px', height: '120px', animation: 'winners-tada 2s infinite ease-in-out', position: 'relative', zIndex: 1 }} />
+                  <span style={{ fontFamily: 'Fredoka One', marginTop: '1rem', color: 'var(--text-navy)', fontSize: '1.2rem', position: 'relative', zIndex: 1 }}>{selectedWinner.rank}</span>
                 </div>
               )}
               <div className="modal-text" style={{ padding: '2.5rem 2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>

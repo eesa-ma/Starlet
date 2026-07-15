@@ -9912,4 +9912,39 @@ input:checked+.a11y-slider:before {
         grid-template-columns: 1fr;
         gap: 3rem;
     }
+}
+
+/* Festive Winner Animations */
+@keyframes winner-sunburst-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.winner-sunburst {
+    position: absolute;
+    width: 300%;
+    height: 300%;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 231, 76, 0.25) 0deg 15deg,
+        transparent 15deg 30deg
+    );
+    animation: winner-sunburst-spin 15s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+    top: -100%;
+    left: -100%;
+}
+
+@keyframes winner-scale-up {
+    0% {
+        transform: scale(0.6) rotate(-2deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+.winner-detail-modal {
+    animation: winner-scale-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
