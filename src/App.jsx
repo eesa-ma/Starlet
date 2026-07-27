@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import SponsorsPage from './SponsorsPage';
 import BlogPostSkeleton from './BlogPostSkeleton';
+import ChatBot from './ChatBot';
 
 
 const sectionsData = [
@@ -615,7 +616,6 @@ function App() {
     }
   }, [session]);
 
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isIOSUser, setIsIOSUser] = useState(false);
@@ -1668,7 +1668,7 @@ function App() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500);
+      // Remove scroll logic for old button
     };
     window.addEventListener('scroll', handleScroll);
 
@@ -11430,9 +11430,7 @@ function App() {
         </div>
       ) : null}
 
-      <div className={`scroll-top-btn ${showScrollTop && activeView !== 'blog' ? 'visible' : ''}`} onClick={scrollToTop}>
-        <img src="icons/rocket.svg" alt="top" />
-      </div>
+      <ChatBot />
       {showForgotPasswordPopup && (
         <div className="modal-overlay" onClick={() => setShowForgotPasswordPopup(false)}>
           <div className="modal-content about-modal" onClick={e => e.stopPropagation()}>
