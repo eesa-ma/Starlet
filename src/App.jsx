@@ -11456,7 +11456,7 @@ function App() {
         </div>
       ) : null}
 
-      <ChatBot onRaiseHand={handleRaiseHand} isRaiseHandEnabled={settings.raise_hand_enabled === 'true'} />
+      <ChatBot onRaiseHand={handleRaiseHand} isRaiseHandEnabled={settings.raise_hand_enabled === 'true' && isLoggedIn && user?.role === 'attendee'} />
       {showForgotPasswordPopup && (
         <div className="modal-overlay" onClick={() => setShowForgotPasswordPopup(false)}>
           <div className="modal-content about-modal" onClick={e => e.stopPropagation()}>
