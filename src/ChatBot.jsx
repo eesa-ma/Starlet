@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { FaCommentDots } from 'react-icons/fa';
+import { BsStars } from 'react-icons/bs';
 import './ChatBot.css';
 
 // --- KNOWLEDGE BASE FOR STELLA ---
@@ -42,6 +44,81 @@ const dataset = [
   {
     keywords: ["bye", "goodbye", "see you"],
     response: "Goodbye! Can't wait to see you at Starlet 5.0!"
+  },
+  {
+    keywords: ["submit idea", "idea submission", "pitch", "propose"],
+    response: "To submit your idea, log into your profile and navigate to the 'Submissions' tab. You'll find a form to describe your idea, problem statement, and proposed solution."
+  },
+  {
+    keywords: ["submit project", "project submission", "upload project", "github"],
+    response: "When you're ready to submit your final project, go to the 'Submissions' dashboard. Make sure to include your GitHub repository link, a demo video, and a brief description of your hack!"
+  },
+  {
+    keywords: ["certificate", "download certificate", "participation certificate", "winner certificate"],
+    response: "Certificates will be available for download from your user profile after the hackathon concludes and evaluations are complete. We will notify you when they are ready!"
+  },
+  {
+    keywords: ["blog", "blogs", "article", "post", "read"],
+    response: "Our blog section is a community space where participants and mentors share tech insights, hackathon experiences, and tutorials. Feel free to read through them or publish your own tech journey!"
+  },
+  {
+    keywords: ["create team", "form team", "make team"],
+    response: "You can create a team from your dashboard. Click on 'Create Team', give your team an awesome name, and you will get a unique Team ID to share with your friends."
+  },
+  {
+    keywords: ["add member", "join team", "team member", "invite"],
+    response: "To join a team, get the Team ID from the creator and enter it in the 'Join Team' section. If you created a team, share your Team ID so others can join you (up to 4 members max)!"
+  },
+  {
+    keywords: ["select theme", "choose theme", "pick track", "select track", "choose track"],
+    response: "You can select your project theme/track in your team settings before the hacking begins. Choose the one that best fits your assistive technology solution!"
+  },
+  {
+    keywords: ["judge", "criteria", "evaluation", "score", "judges"],
+    response: "Projects are evaluated based on innovation, impact, technical complexity, and adherence to the theme. Check out our 'Judges & Prizes' section to learn more!"
+  },
+  {
+    keywords: ["rules", "plagiarism", "code of conduct", "guidelines"],
+    response: "Fair play is the heart of Starlet! All code must be written during the hackathon, and teams must follow our inclusive code of conduct. Check the 'Rules of the Galaxy' section for details."
+  },
+  {
+    keywords: ["food", "meals", "sleep", "rest", "accommodation"],
+    response: "Yes! We will provide meals, snacks, and a dedicated resting area so you can stay energized throughout the marathon."
+  },
+  {
+    keywords: ["forgot password", "login", "cant access", "reset password"],
+    response: "If you forgot your password, please contact the organizers directly with your registered email address for verification."
+  },
+  {
+    keywords: ["events", "activities", "music", "fun", "highlights"],
+    response: "We have amazing side events planned including music performances, a sharing circle, and even Kaleripayettu! Check 'Highlights & Special Events' on the timeline."
+  },
+  {
+    keywords: ["swag", "goodies", "freebies", "stickers"],
+    response: "Absolutely! All participants will receive exclusive Starlet 5.0 swag and goodies at the event."
+  },
+  {
+    keywords: ["accessibility", "contrast", "font size", "dyslexia", "tools"],
+    response: "Our website features a built-in accessibility widget! Click the accessibility icon to adjust contrast, font size, enable dyslexia-friendly fonts, or use the reading mask."
+  },
+  {
+    keywords: ["report issue", "problem", "bug", "report", "issue", "broken", "help"],
+    response: "If you encounter any technical issues or bugs, you can easily report them! Just head over to your participant profile and click the 'Report Issue' option."
+  },
+  {
+    keywords: ["call mentor", "request mentor", "need mentor", "mentor help", "stuck"],
+    response: "If your team is stuck or needs guidance, you can call a mentor! Look for the 'Request Mentor' option on your dashboard or ask an organizer during the hacking period."
+  },
+  {
+    keywords: [
+      "ok", "okay", "okayy", "oky", "okkk", "k", "kk", 
+      "cool", "ahh", "aah", "ah", "oh", "wow", "got it", 
+      "thanks", "thank you", "nice", "awesome", "great", "good", 
+      "sure", "alright", "perfect", "amazing", "understood", 
+      "makes sense", "sweet", "fantastic", "brilliant", "wonderful", 
+      "yep", "yeah", "yes", "coolio", "thx", "ty", "cheers", "Aa", "Aah", "Ahh", "Haa","AHH", "Ahhh", "AHHH", "ahhh", "AH"
+    ],
+    response: "Glad I could help! Is there anything else you'd like to know about Starlet?"
   }
 ];
 
@@ -55,7 +132,9 @@ const getBotResponse = (input) => {
   for (const item of dataset) {
     let score = 0;
     for (const keyword of item.keywords) {
-      if (lowerInput.includes(keyword)) {
+      // Use word boundaries to avoid false positives (e.g. "ok" matching "book")
+      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+      if (regex.test(lowerInput)) {
         score++;
       }
     }
@@ -122,7 +201,7 @@ const ChatBot = () => {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <div className="chatbot-header-title">
-              <span>✨</span>
+              <BsStars style={{ fontSize: '18px', color: '#ffd700' }} />
               <div>
                 <span>Stella</span>
                 <div className="chatbot-header-subtitle">Starlet Assistant</div>
@@ -168,7 +247,7 @@ const ChatBot = () => {
         </div>
       ) : (
         <button className="chatbot-toggle-btn" onClick={toggleChat} aria-label="Open Chat">
-          💬
+          <FaCommentDots size={28} />
         </button>
       )}
     </div>
