@@ -3002,11 +3002,28 @@ function App() {
       .order('created_at', { ascending: false });
 
     if (user.role !== 'admin') {
-      query = query.eq('mentor_id', session.user.id);
+      query = query.or(`mentor_id.eq.${session.user.id},mentor_id.is.null`);
     }
 
     const { data, error } = await query;
     if (data) setMentorRequests(data);
+  };
+
+  const handleRaiseHand = async () => {
+    if (!session?.user?.id) {
+      alert("Please login to raise a hand.");
+      return;
+    }
+    const { error } = await supabase.from('mentor_requests').insert([{
+      attendee_id: session.user.id,
+      mentor_id: null,
+      message: "Raised Hand for Assistance from ChatBot"
+    }]);
+    if (error) {
+      alert("Failed to raise hand: " + error.message);
+    } else {
+      alert("Your mentor request has been broadcasted to all mentors and admins!");
+    }
   };
 
   const fetchAllMentors = async () => {
@@ -7269,6 +7286,15 @@ function App() {
                           {settings.idea_submission_open === 'true' ? 'STOP IDEA SUBMISSION' : 'START IDEA SUBMISSION'}
                         </button>
                       </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                        <span>Enable / Disable Raise Hand</span>
+                        <button
+                          className={`btn-small ${settings.raise_hand_enabled === 'true' ? 'accept' : 'decline'}`}
+                          onClick={() => updateSetting('raise_hand_enabled', settings.raise_hand_enabled === 'true' ? 'false' : 'true')}
+                        >
+                          {settings.raise_hand_enabled === 'true' ? 'DISABLE RAISE HAND' : 'ENABLE RAISE HAND'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="admin-card">
@@ -11430,7 +11456,7 @@ function App() {
         </div>
       ) : null}
 
-      <ChatBot />
+      <ChatBot onRaiseHand={handleRaiseHand} isRaiseHandEnabled={settings.raise_hand_enabled === 'true'} />
       {showForgotPasswordPopup && (
         <div className="modal-overlay" onClick={() => setShowForgotPasswordPopup(false)}>
           <div className="modal-content about-modal" onClick={e => e.stopPropagation()}>

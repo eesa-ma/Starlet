@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaCommentDots } from 'react-icons/fa';
-import { BsStars } from 'react-icons/bs';
+import { BsStars, BsStarFill } from 'react-icons/bs';
 import './ChatBot.css';
 
 // --- KNOWLEDGE BASE FOR STELLA ---
@@ -152,7 +152,7 @@ const getBotResponse = (input) => {
   return "I'm still learning! But I'd be happy to answer questions about Starlet's theme, rules, prizes, dates, or registration fee. Try asking 'What is the theme?'";
 };
 
-const ChatBot = () => {
+const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { sender: 'bot', text: "Hi! I'm Stella, your personalized Starlet assistant. How can I help you?" }
@@ -226,6 +226,18 @@ const ChatBot = () => {
                 <button onClick={() => handleSuggestionClick("Tell me about the prizes")} className="chatbot-suggestion-btn">Prizes 🏆</button>
                 <button onClick={() => handleSuggestionClick("When is the event?")} className="chatbot-suggestion-btn">Dates 📅</button>
               </div>
+            </div>
+          )}
+
+          {isRaiseHandEnabled && (
+            <div className="chatbot-raise-hand-container">
+              <button 
+                className="chatbot-raise-hand-btn" 
+                onClick={onRaiseHand}
+                title="Request mentor assistance"
+              >
+                <BsStarFill className="raise-hand-icon" /> Raise Hand
+              </button>
             </div>
           )}
 
