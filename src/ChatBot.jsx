@@ -46,6 +46,10 @@ const dataset = [
     response: "Goodbye! Can't wait to see you at Starlet 5.0!"
   },
   {
+    keywords: ["starlet 6.0", "starlet 6", "next starlet", "upcoming starlet", "about starlet 6.0"],
+    response: "Coming soon! Stay tuned for more updates about Starlet 6.0."
+  },
+  {
     keywords: ["submit idea", "idea submission", "pitch", "propose"],
     response: "To submit your idea, log into your profile and navigate to the 'Submissions' tab. You'll find a form to describe your idea, problem statement, and proposed solution."
   },
@@ -141,9 +145,12 @@ const getBotResponse = (input) => {
     let score = 0;
     for (const keyword of item.keywords) {
       // Use word boundaries to avoid false positives (e.g. "ok" matching "book")
-      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+      // Escape special characters in keyword just in case
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
       if (regex.test(lowerInput)) {
-        score++;
+        // Give higher weight to multi-word/longer keywords
+        score += keyword.split(' ').length;
       }
     }
     if (score > maxScore) {
