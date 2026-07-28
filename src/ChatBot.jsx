@@ -74,6 +74,14 @@ const dataset = [
     response: "You can select your project theme/track in your team settings before the hacking begins. Choose the one that best fits your assistive technology solution!"
   },
   {
+    keywords: ["change track", "change theme", "switch track", "switch theme", "update track", "update theme"],
+    response: "If you want to change your track after selecting one, simply provide your new track as the idea submission title!"
+  },
+  {
+    keywords: ["edit idea", "edit submission", "change idea", "update idea", "update project", "change project", "edit project", "modify project", "change submission"],
+    response: "If you need to edit your idea submission, update your project details, or change any fields after submitting, please reach out to our mentors or admins using the 'Raise Hand' button for assistance!"
+  },
+  {
     keywords: ["judge", "criteria", "evaluation", "score", "judges"],
     response: "Projects are evaluated based on innovation, impact, technical complexity, and adherence to the theme. Check out our 'Judges & Prizes' section to learn more!"
   },
