@@ -6,8 +6,16 @@ import './ChatBot.css';
 // --- KNOWLEDGE BASE FOR STELLA ---
 const dataset = [
   {
-    keywords: ["what is", "about", "starlet", "event"],
+    keywords: ["what is", "about starlet", "purpose", "mission", "vision"],
     response: "Starlet 5.0 is the ultimate innovation marathon for women where ideas meet execution! It's a safe place for girls to connect, code, co-create, and cultivate confidence."
+  },
+  {
+    keywords: ["prize", "prizes", "award", "awards", "win", "winning"],
+    response: "We have a total prize pool of over ₹40,000, including awards for the top 3 teams and a special 'Best Innovation' prize."
+  },
+  {
+    keywords: ["registration fee", "cost", "price", "pay", "ticket", "fee", "free"],
+    response: "Registration for Starlet is completely free! We believe in making innovation accessible to everyone."
   },
   {
     keywords: ["theme", "topic", "build", "create", "focus"],
