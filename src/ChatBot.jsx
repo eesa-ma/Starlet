@@ -6,8 +6,16 @@ import './ChatBot.css';
 // --- KNOWLEDGE BASE FOR STELLA ---
 const dataset = [
   {
-    keywords: ["what is", "about", "starlet", "event"],
+    keywords: ["what is", "about starlet", "purpose", "mission", "vision"],
     response: "Starlet 5.0 is the ultimate innovation marathon for women where ideas meet execution! It's a safe place for girls to connect, code, co-create, and cultivate confidence."
+  },
+  {
+    keywords: ["prize", "prizes", "award", "awards", "win", "winning"],
+    response: "We have a total prize pool of over ₹40,000, including awards for the top 3 teams and a special 'Best Innovation' prize."
+  },
+  {
+    keywords: ["registration fee", "cost", "price", "pay", "ticket", "fee", "free"],
+    response: "Registration for Starlet is completely free! We believe in making innovation accessible to everyone."
   },
   {
     keywords: ["theme", "topic", "build", "create", "focus"],
@@ -46,6 +54,10 @@ const dataset = [
     response: "Goodbye! Can't wait to see you at Starlet 5.0!"
   },
   {
+    keywords: ["starlet 6.0", "starlet 6", "next starlet", "upcoming starlet", "about starlet 6.0"],
+    response: "Coming soon! Stay tuned for more updates about Starlet 6.0."
+  },
+  {
     keywords: ["submit idea", "idea submission", "pitch", "propose"],
     response: "To submit your idea, log into your profile and navigate to the 'Submissions' tab. You'll find a form to describe your idea, problem statement, and proposed solution."
   },
@@ -72,6 +84,14 @@ const dataset = [
   {
     keywords: ["select theme", "choose theme", "pick track", "select track", "choose track"],
     response: "You can select your project theme/track in your team settings before the hacking begins. Choose the one that best fits your assistive technology solution!"
+  },
+  {
+    keywords: ["change track", "change theme", "switch track", "switch theme", "update track", "update theme"],
+    response: "If you want to change your track after selecting one, simply provide your new track as the idea submission title!"
+  },
+  {
+    keywords: ["edit idea", "edit submission", "change idea", "update idea", "update project", "change project", "edit project", "modify project", "change submission"],
+    response: "If you need to edit your idea submission, update your project details, or change any fields after submitting, please reach out to our mentors or admins using the 'Raise Hand' button for assistance!"
   },
   {
     keywords: ["judge", "criteria", "evaluation", "score", "judges"],
@@ -133,9 +153,12 @@ const getBotResponse = (input) => {
     let score = 0;
     for (const keyword of item.keywords) {
       // Use word boundaries to avoid false positives (e.g. "ok" matching "book")
-      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+      // Escape special characters in keyword just in case
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
       if (regex.test(lowerInput)) {
-        score++;
+        // Give higher weight to multi-word/longer keywords
+        score += keyword.split(' ').length;
       }
     }
     if (score > maxScore) {
