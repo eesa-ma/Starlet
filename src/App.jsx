@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import SponsorsPage from './SponsorsPage';
 import BlogPostSkeleton from './BlogPostSkeleton';
+import ChatBot from './ChatBot';
 
 
 const sectionsData = [
@@ -259,16 +260,6 @@ const tracksData = Array.from({ length: 15 }, (_, i) => ({
   details: "Dive into this challenge and use your coding skills to create a solution that makes a real-world impact. Collaboration and creativity are key!"
 }));
 
-const faqsData = [
-  { id: 1, q: "What is Starlet 5.0?", a: "Starlet 5.0 is a high-impact innovation hackathon dedicated to building technology that empowers people with disabilities and improves accessibility across the world." },
-  { id: 2, q: "Who can participate?", a: "The event is open to all women and non-binary students and innovators. Whether you're a beginner or a pro, you're welcome!" },
-  { id: 3, q: "Do I need a team to register?", a: "No! You can register as a solo participant and we will put you in a team, or form a team of 3 to 4 members." },
-  // { id: 4, q: "Where will the event be held?", a: "We have two venues: the Main Venue at Adi Shankara Institute (Kalady) and a second location at Aikyam Space (Matancherry)." },
-  { id: 5, q: "Is there any registration fee?", a: "Yes, the registration fee is ₹150 per head. Please ensure you attach the fee payment screenshot during registration." },
-  { id: 6, q: "What are the prizes?", a: "We have a total prize pool of over ₹40,000, including awards for the top 3 teams and a special 'Best Innovation' prize." },
-  { id: 7, q: "What should I bring with me?", a: "Please bring your own laptop and charger. We'll provide the internet, food, mentorship, and a great environment!" },
-  { id: 8, q: "Will there be mentorship available?", a: "Yes! Industry experts and tech mentors will be available throughout the event to guide you and your team." }
-];
 
 const mentorsData = Array.from({ length: 6 }, (_, i) => ({
   id: i + 1,
@@ -523,14 +514,14 @@ function App() {
     if (!canvas) return;
     const particlesRef = targetParticlesRef || confettiParticlesRef;
     const colors = ['#ff5964', '#ffe74c', '#38a3a5', '#22577a', '#f72585', '#7209b7', '#3f37c9', '#4cc9f0', '#ff007f', '#00f5d4', '#ffcc00'];
-    
+
     const createCannon = (startX, startY, baseAngleDeg, count) => {
       const angleRad = (baseAngleDeg * Math.PI) / 180;
       for (let i = 0; i < count; i++) {
         const velocity = Math.random() * 18 + 12; // Fast launch
         const spread = (Math.random() * 40 - 20) * Math.PI / 180; // Spread angle
         const finalAngle = angleRad + spread;
-        
+
         particlesRef.current.push({
           x: startX,
           y: startY,
@@ -562,7 +553,7 @@ function App() {
             ctx.rotate((this.rotation * Math.PI) / 180);
             ctx.fillStyle = this.color;
             ctx.globalAlpha = this.opacity;
-            
+
             if (this.shape === 'rect') {
               ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size * 1.5);
             } else if (this.shape === 'circle') {
@@ -615,7 +606,6 @@ function App() {
     }
   }, [session]);
 
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isIOSUser, setIsIOSUser] = useState(false);
@@ -629,7 +619,6 @@ function App() {
   });
   const [fadeOut, setFadeOut] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [faqLimit, setFaqLimit] = useState(3);
   const [visibleSections, setVisibleSections] = useState(new Set());
 
   const [user, setUser] = useState({
@@ -1573,7 +1562,7 @@ function App() {
       window.addEventListener('resize', resizeCanvas);
 
       const colors = ['#ff5964', '#ffe74c', '#38a3a5', '#22577a', '#f72585', '#7209b7', '#3f37c9', '#4cc9f0'];
-      
+
       const initialParticles = [];
       const particleCount = 60;
       for (let i = 0; i < particleCount; i++) {
@@ -1668,7 +1657,7 @@ function App() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500);
+      // Remove scroll logic for old button
     };
     window.addEventListener('scroll', handleScroll);
 
@@ -3002,11 +2991,28 @@ function App() {
       .order('created_at', { ascending: false });
 
     if (user.role !== 'admin') {
-      query = query.eq('mentor_id', session.user.id);
+      query = query.or(`mentor_id.eq.${session.user.id},mentor_id.is.null`);
     }
 
     const { data, error } = await query;
     if (data) setMentorRequests(data);
+  };
+
+  const handleRaiseHand = async () => {
+    if (!session?.user?.id) {
+      alert("Please login to raise a hand.");
+      return;
+    }
+    const { error } = await supabase.from('mentor_requests').insert([{
+      attendee_id: session.user.id,
+      mentor_id: null,
+      message: "Raised Hand for Assistance from ChatBot"
+    }]);
+    if (error) {
+      alert("Failed to raise hand: " + error.message);
+    } else {
+      alert("Your mentor request has been broadcasted to all mentors and admins!");
+    }
   };
 
   const fetchAllMentors = async () => {
@@ -5117,7 +5123,7 @@ function App() {
               .getPublicUrl(filePath);
             if (urlData?.publicUrl) {
               q4BlogEntries.push({
-                url:  urlData.publicUrl,
+                url: urlData.publicUrl,
                 type: item.file.type.startsWith('video') ? 'video' : 'image'
               });
             }
@@ -5129,16 +5135,16 @@ function App() {
 
       // ── Step 2: Save to Supabase feedback table (primary) ──
       const { error: dbError } = await supabase.from('feedback').insert([{
-        user_id:              session?.user?.id || null,
-        role:                 user.role || 'attendee',
-        name:                 user.name   || 'Anonymous',
-        email:                user.email  || null,
-        college:              user.college || null,
-        q1_experience:        fbQ1,
+        user_id: session?.user?.id || null,
+        role: user.role || 'attendee',
+        name: user.name || 'Anonymous',
+        email: user.email || null,
+        college: user.college || null,
+        q1_experience: fbQ1,
         q2_memorable_session: fbQ2,
-        q3_best_memory:       fbQ3 || null,
-        q4_blog_entries:      q4BlogEntries,
-        q5_improve:           fbQ5,
+        q3_best_memory: fbQ3 || null,
+        q4_blog_entries: q4BlogEntries,
+        q5_improve: fbQ5,
       }]);
 
       if (dbError) {
@@ -5147,11 +5153,11 @@ function App() {
 
       // ── Step 2.5: Automatically post media to the blog ──
       if (q4BlogEntries.length > 0) {
-        const mediaUrlPayload = q4BlogEntries.length === 1 
-          ? q4BlogEntries[0].url 
+        const mediaUrlPayload = q4BlogEntries.length === 1
+          ? q4BlogEntries[0].url
           : JSON.stringify(q4BlogEntries);
-        const mediaTypePayload = q4BlogEntries.length === 1 
-          ? q4BlogEntries[0].type 
+        const mediaTypePayload = q4BlogEntries.length === 1
+          ? q4BlogEntries[0].type
           : 'carousel';
         const positionsPayload = q4BlogEntries.map(entry => ({
           position: entry.type === 'video' ? 'center center' : '50% 50%'
@@ -5166,7 +5172,7 @@ function App() {
             media_type: mediaTypePayload,
             media_positions: positionsPayload,
           }]);
-        
+
         if (blogError) {
           console.error('Failed to auto-post feedback media to blog:', blogError);
         } else {
@@ -5183,18 +5189,18 @@ function App() {
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action:               'feedback',
-            role:                 user.role || 'attendee',
-            name:                 user.name   || 'Anonymous',
-            email:                user.email  || '—',
-            college:              user.college || '—',
-            q1_experience:        fbQ1,
+            action: 'feedback',
+            role: user.role || 'attendee',
+            name: user.name || 'Anonymous',
+            email: user.email || '—',
+            college: user.college || '—',
+            q1_experience: fbQ1,
             q2_memorable_session: fbQ2,
-            q3_best_memory:       fbQ3,
-            q4_blog_urls:         q4BlogEntries.map(e => e.url).join(', '),
-            q5_improve:           fbQ5,
+            q3_best_memory: fbQ3,
+            q4_blog_urls: q4BlogEntries.map(e => e.url).join(', '),
+            q5_improve: fbQ5,
           })
-        }).catch(() => {}); // fire-and-forget
+        }).catch(() => { }); // fire-and-forget
       }
 
       localStorage.setItem(`feedback_submitted_${user.id}`, 'true');
@@ -5251,11 +5257,11 @@ function App() {
         });
 
         if (!alreadyExists) {
-          const mediaUrlPayload = fb.q4_blog_entries.length === 1 
-            ? fb.q4_blog_entries[0].url 
+          const mediaUrlPayload = fb.q4_blog_entries.length === 1
+            ? fb.q4_blog_entries[0].url
             : JSON.stringify(fb.q4_blog_entries);
-          const mediaTypePayload = fb.q4_blog_entries.length === 1 
-            ? fb.q4_blog_entries[0].type 
+          const mediaTypePayload = fb.q4_blog_entries.length === 1
+            ? fb.q4_blog_entries[0].type
             : 'carousel';
           const positionsPayload = fb.q4_blog_entries.map(entry => ({
             position: entry.type === 'video' ? 'center center' : '50% 50%'
@@ -5894,9 +5900,9 @@ function App() {
                                   </div>
                                 )}
                               </div>
-                              <button 
+                              <button
                                 type="button"
-                                className="winner-action-btn" 
+                                className="winner-action-btn"
                                 style={{ marginTop: '1.2rem', alignSelf: 'center', cursor: 'pointer' }}
                               >
                                 View More
@@ -5923,9 +5929,9 @@ function App() {
                                   </div>
                                 )}
                               </div>
-                              <button 
+                              <button
                                 type="button"
-                                className="winner-action-btn" 
+                                className="winner-action-btn"
                                 style={{ marginTop: '1.2rem', alignSelf: 'center', cursor: 'pointer' }}
                               >
                                 View More
@@ -5952,9 +5958,9 @@ function App() {
                                   </div>
                                 )}
                               </div>
-                              <button 
+                              <button
                                 type="button"
-                                className="winner-action-btn" 
+                                className="winner-action-btn"
                                 style={{ marginTop: '1.2rem', alignSelf: 'center', cursor: 'pointer' }}
                               >
                                 View More
@@ -5984,9 +5990,9 @@ function App() {
                                   </div>
                                 )}
                               </div>
-                              <button 
+                              <button
                                 type="button"
-                                className="winner-action-btn" 
+                                className="winner-action-btn"
                                 style={{ marginTop: '1.2rem', alignSelf: 'flex-start', cursor: 'pointer' }}
                               >
                                 View More
@@ -6641,25 +6647,6 @@ function App() {
                         </div>
                       </div>
                     </div>
-                  ) : section.type === 'faq' ? (
-                    <div className="section-content">
-                      <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
-                      <div className="faq-grid">
-                        {faqsData.slice(0, faqLimit).map(faq => (
-                          <div key={faq.id} className="faq-item">
-                            <div className="faq-question">{faq.q}</div>
-                            <div className="faq-answer">{faq.a}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {faqLimit < faqsData.length && (
-                        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-                          <button className="join-btn" onClick={() => setFaqLimit(prev => prev + 3)}>
-                            SHOW MORE DOUBTS
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   ) : section.type === 'contact' ? (
                     <div className="section-content">
                       <h2 className="text-3d" style={{ fontSize: '2.5rem' }}>{section.title}</h2>
@@ -7267,6 +7254,15 @@ function App() {
                           onClick={() => updateSetting('idea_submission_open', settings.idea_submission_open === 'true' ? 'false' : 'true')}
                         >
                           {settings.idea_submission_open === 'true' ? 'STOP IDEA SUBMISSION' : 'START IDEA SUBMISSION'}
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                        <span>Enable / Disable Raise Hand</span>
+                        <button
+                          className={`btn-small ${settings.raise_hand_enabled === 'true' ? 'accept' : 'decline'}`}
+                          onClick={() => updateSetting('raise_hand_enabled', settings.raise_hand_enabled === 'true' ? 'false' : 'true')}
+                        >
+                          {settings.raise_hand_enabled === 'true' ? 'DISABLE RAISE HAND' : 'ENABLE RAISE HAND'}
                         </button>
                       </div>
                     </div>
@@ -8791,9 +8787,9 @@ function App() {
                 <div className="admin-panel" id="user-feedbacks-section" style={{ marginBottom: '4rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                     <h2 className="text-3d" style={{ fontSize: '2rem', margin: 0 }}>User Feedbacks</h2>
-                    <button 
-                      className="directory-download-btn" 
-                      onClick={handleSyncFeedbacksToBlog} 
+                    <button
+                      className="directory-download-btn"
+                      onClick={handleSyncFeedbacksToBlog}
                       style={{ margin: 0, padding: '0.6rem 1.2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                     >
                       <img src="/svg/emoji/refresh.svg" alt="" style={{ width: '16px', height: '16px' }} />
@@ -9575,7 +9571,7 @@ function App() {
                     </div>
                     {user.isApproved && (
                       <div style={{ marginTop: '0.6rem', fontSize: '0.75rem', color: '#25D366', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#25D366" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#25D366" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                         Attendance verified — you're all set!
                       </div>
                     )}
@@ -11429,10 +11425,11 @@ function App() {
           )}
         </div>
       ) : null}
-
-      <div className={`scroll-top-btn ${showScrollTop && activeView !== 'blog' ? 'visible' : ''}`} onClick={scrollToTop}>
-        <img src="icons/rocket.svg" alt="top" />
-      </div>
+      {/* chatbot */}
+      <ChatBot 
+        onRaiseHand={handleRaiseHand} 
+        isRaiseHandEnabled={settings.raise_hand_enabled === 'true' && isLoggedIn && user?.role === 'attendee'} 
+      />
       {showForgotPasswordPopup && (
         <div className="modal-overlay" onClick={() => setShowForgotPasswordPopup(false)}>
           <div className="modal-content about-modal" onClick={e => e.stopPropagation()}>
@@ -12093,7 +12090,7 @@ function App() {
                   <div style={{ marginBottom: '1rem', fontSize: '3rem' }}>💡</div>
                   <h3 style={{ fontFamily: 'Fredoka One', color: 'var(--text-navy)', fontSize: '1.6rem', marginBottom: '0.5rem' }}>Idea Submitted!</h3>
                   <p style={{ fontFamily: 'Outfit', color: 'var(--text-navy)', fontSize: '1.05rem', margin: '0.5rem 0' }}>Your idea <strong>"{myIdeaSubmission.idea_title}"</strong> has been received.</p>
-                  
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginTop: '2rem', textAlign: 'left' }}>
                     <div className="input-group">
                       <label style={{ color: 'var(--text-navy)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.3rem', display: 'block' }}>Idea Details</label>
@@ -12105,7 +12102,7 @@ function App() {
                 </div>
               ) : (
                 <form className="auth-form" onSubmit={handleIdeaSubmit} style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                  
+
                   <div className="input-group">
                     <label style={{ color: 'var(--text-navy)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.3rem', display: 'block' }}>Team/Group Name</label>
                     <input name="teamName" type="text" value={user.teamName || `Individual-${session?.user?.id}`} disabled style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '2px solid var(--text-navy)', background: '#e2e8f0', color: '#4a5568', fontWeight: 'bold' }} />
