@@ -224,7 +224,7 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <div className="chatbot-header-title">
-              <BsStars style={{ fontSize: '18px', color: '#ffd700' }} />
+              <img src="brand/favicon.png" alt="favicon" width={25} height={25} />
               <div>
                 <span>Stella</span>
                 <div className="chatbot-header-subtitle">Starlet Assistant</div>
