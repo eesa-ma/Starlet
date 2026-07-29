@@ -112,13 +112,6 @@ const sectionsData = [
     image: "icons/warning.svg"
   },
   {
-    id: 12,
-    type: 'faq',
-    title: "Common Doubts",
-    content: "Answers to frequently asked questions.",
-    image: "icons/warning.svg"
-  },
-  {
     id: 14,
     type: 'contact',
     title: "Get in Touch",
