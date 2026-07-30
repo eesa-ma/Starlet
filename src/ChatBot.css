@@ -10,7 +10,7 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--pink-primary, #ff007f), var(--purple-accent, #7209b7));
+  background: var(--pink-primary, #ff007f);
   border: none;
   color: white;
   display: flex;
@@ -74,7 +74,7 @@ html[data-theme='dark'] .chatbot-window {
 }
 
 .chatbot-header {
-  background: linear-gradient(135deg, var(--pink-primary, #ff007f), var(--purple-accent, #7209b7));
+  background: var(--pink-primary, #ff007f);
   color: white;
   padding: 15px 20px;
   display: flex;
