@@ -106,6 +106,10 @@ html[data-theme='dark'] .chatbot-window {
   color: white;
   font-size: 20px;
   cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0.8;
   transition: opacity 0.2s;
 }

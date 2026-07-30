@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaCommentDots, FaEllipsisV } from 'react-icons/fa';
+import { FaCommentDots, FaEllipsisV, FaTimes } from 'react-icons/fa';
 import './ChatBot.css';
 
 // --- KNOWLEDGE BASE FOR STELLA ---
@@ -270,7 +270,7 @@ const ChatBot = ({ onCallMentor, onContactUs }) => {
                   <div className="chatbot-dropdown-item" onClick={() => { setMenuOpen(false); if (onContactUs) onContactUs(); }}>Contact us</div>
                 </div>
               )}
-              <button className="chatbot-close-btn" onClick={toggleChat}>&times;</button>
+              <button className="chatbot-close-btn" onClick={toggleChat}><FaTimes /></button>
             </div>
           </div>
           
