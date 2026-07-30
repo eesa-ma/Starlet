@@ -231,22 +231,46 @@ html[data-theme='dark'] .chatbot-input {
 }
 
 /* Suggestions / Chips */
+.chatbot-suggestions-container {
+  background: rgba(255, 0, 127, 0.05);
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 5px;
+}
+
+html[data-theme='dark'] .chatbot-suggestions-container {
+  background: rgba(255, 0, 127, 0.1);
+}
+
+.chatbot-suggestions-title {
+  margin: 0 0 12px 0;
+  font-size: 13.5px;
+  color: var(--text-primary, #333333);
+  text-align: left;
+}
+
+html[data-theme='dark'] .chatbot-suggestions-title {
+  color: #f1f1f1;
+}
+
 .chatbot-suggestions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .chatbot-suggestion-btn {
   background: rgba(255, 0, 127, 0.1);
   color: var(--pink-primary, #ff007f);
   border: 1px solid rgba(255, 0, 127, 0.2);
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 12px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
 }
 
 html[data-theme='dark'] .chatbot-suggestion-btn {

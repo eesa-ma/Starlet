@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaCommentDots } from 'react-icons/fa';
+import { FaCommentDots, FaHandPaper } from 'react-icons/fa';
 import { BsStars, BsStarFill } from 'react-icons/bs';
 import './ChatBot.css';
 
@@ -239,18 +239,20 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
                 {msg.text}
               </div>
             ))}
+            
+            {messages.length < 3 && (
+              <div className="chatbot-suggestions-container">
+                <p className="chatbot-suggestions-title">What are you looking for?</p>
+                <div className="chatbot-suggestions">
+                  <button onClick={() => handleSuggestionClick("What is Starlet?")} className="chatbot-suggestion-btn">What is Starlet?</button>
+                  <button onClick={() => handleSuggestionClick("Tell me about the prizes")} className="chatbot-suggestion-btn">Prizes </button>
+                  <button onClick={() => handleSuggestionClick("When is the event?")} className="chatbot-suggestion-btn">Dates </button>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
-
-          {messages.length < 3 && (
-            <div style={{ padding: '0 20px 10px' }}>
-              <div className="chatbot-suggestions">
-                <button onClick={() => handleSuggestionClick("What is Starlet?")} className="chatbot-suggestion-btn">What is Starlet?</button>
-                <button onClick={() => handleSuggestionClick("Tell me about the prizes")} className="chatbot-suggestion-btn">Prizes 🏆</button>
-                <button onClick={() => handleSuggestionClick("When is the event?")} className="chatbot-suggestion-btn">Dates 📅</button>
-              </div>
-            </div>
-          )}
 
           {isRaiseHandEnabled && (
             <div className="chatbot-raise-hand-container">
@@ -259,7 +261,7 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
                 onClick={onRaiseHand}
                 title="Request mentor assistance"
               >
-                <BsStarFill className="raise-hand-icon" /> Raise Hand
+                <FaHandPaper className="raise-hand-icon" /> Raise Hand
               </button>
             </div>
           )}
