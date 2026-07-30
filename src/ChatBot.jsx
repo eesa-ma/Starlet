@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaCommentDots, FaHandPaper } from 'react-icons/fa';
-import { BsStars, BsStarFill } from 'react-icons/bs';
 import './ChatBot.css';
 
 // --- KNOWLEDGE BASE FOR STELLA ---
@@ -46,7 +45,7 @@ const dataset = [
     response: "Yes! Industry experts and tech mentors will be available throughout the event to guide you and your team."
   },
   {
-    keywords: ["hello", "hi", "hey", "greetings"],
+    keywords: ["hello", "hi", "hey", "greetings", "hii", "hii", "hii"],
     response: "Hi there! I'm Stella, your personalized Starlet assistant. How can I help you today?"
   },
   {
@@ -230,7 +229,18 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
                 <div className="chatbot-header-subtitle">Starlet Assistant</div>
               </div>
             </div>
-            <button className="chatbot-close-btn" onClick={toggleChat}>&times;</button>
+            <div className="chatbot-header-actions">
+              {isRaiseHandEnabled && (
+                <button 
+                  className="chatbot-header-raise-hand-btn" 
+                  onClick={onRaiseHand}
+                  title="Raise Hand for Mentor Assistance"
+                >
+                  <FaHandPaper />
+                </button>
+              )}
+              <button className="chatbot-close-btn" onClick={toggleChat}>&times;</button>
+            </div>
           </div>
           
           <div className="chatbot-messages">
@@ -240,31 +250,10 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
               </div>
             ))}
             
-            {messages.length < 3 && (
-              <div className="chatbot-suggestions-container">
-                <p className="chatbot-suggestions-title">What are you looking for?</p>
-                <div className="chatbot-suggestions">
-                  <button onClick={() => handleSuggestionClick("What is Starlet?")} className="chatbot-suggestion-btn">What is Starlet?</button>
-                  <button onClick={() => handleSuggestionClick("Tell me about the prizes")} className="chatbot-suggestion-btn">Prizes </button>
-                  <button onClick={() => handleSuggestionClick("When is the event?")} className="chatbot-suggestion-btn">Dates </button>
-                </div>
-              </div>
-            )}
+            
             
             <div ref={messagesEndRef} />
           </div>
-
-          {isRaiseHandEnabled && (
-            <div className="chatbot-raise-hand-container">
-              <button 
-                className="chatbot-raise-hand-btn" 
-                onClick={onRaiseHand}
-                title="Request mentor assistance"
-              >
-                <FaHandPaper className="raise-hand-icon" /> Raise Hand
-              </button>
-            </div>
-          )}
 
           <form className="chatbot-input-area" onSubmit={handleSend}>
             <input
