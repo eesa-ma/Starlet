@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaCommentDots, FaHandPaper } from 'react-icons/fa';
+import { FaCommentDots, FaEllipsisV } from 'react-icons/fa';
 import './ChatBot.css';
 
 // --- KNOWLEDGE BASE FOR STELLA ---
@@ -46,7 +46,7 @@ const dataset = [
   },
   {
     keywords: ["hello", "hi", "hey", "greetings", "hii", "hii", "hii"],
-    response: "Hi there! I'm Stella, your personalized Starlet assistant. How can I help you today?"
+    response: "Hi there! I'm Stella, your Starlet ssistant. How can I help you today?"
   },
   {
     keywords: ["bye", "goodbye", "see you"],
@@ -174,13 +174,44 @@ const getBotResponse = (input) => {
   return "I'm still learning! But I'd be happy to answer questions about Starlet's theme, rules, prizes, dates, or registration fee. Try asking 'What is the theme?'";
 };
 
-const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
+const ChatBot = ({ onCallMentor, onContactUs }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: 'bot', text: "Hi! I'm Stella, your personalized Starlet assistant. How can I help you?" }
+    { sender: 'bot', text: "Hi! I'm Stella, your Starlet assistant. How can I help you?" }
   ]);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
+  const menuRef = useRef(null);
+  const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+      if (isOpen && chatContainerRef.current && !chatContainerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        if (isOpen) setIsOpen(false);
+      }
+    };
+
+    if (menuOpen || isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEsc);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [menuOpen, isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -218,7 +249,7 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
   };
 
   return (
-    <div className="chatbot-container">
+    <div className="chatbot-container" ref={chatContainerRef}>
       {isOpen ? (
         <div className="chatbot-window">
           <div className="chatbot-header">
@@ -229,15 +260,15 @@ const ChatBot = ({ onRaiseHand, isRaiseHandEnabled }) => {
                 <div className="chatbot-header-subtitle">Starlet Assistant</div>
               </div>
             </div>
-            <div className="chatbot-header-actions">
-              {isRaiseHandEnabled && (
-                <button 
-                  className="chatbot-header-raise-hand-btn" 
-                  onClick={onRaiseHand}
-                  title="Raise Hand for Mentor Assistance"
-                >
-                  <FaHandPaper />
-                </button>
+            <div className="chatbot-header-actions" style={{ position: 'relative' }} ref={menuRef}>
+              <button className="chatbot-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
+                <FaEllipsisV />
+              </button>
+              {menuOpen && (
+                <div className="chatbot-dropdown-menu">
+                  <div className="chatbot-dropdown-item" onClick={() => { setMenuOpen(false); if (onCallMentor) onCallMentor(); }}>Call a mentor</div>
+                  <div className="chatbot-dropdown-item" onClick={() => { setMenuOpen(false); if (onContactUs) onContactUs(); }}>Contact us</div>
+                </div>
               )}
               <button className="chatbot-close-btn" onClick={toggleChat}>&times;</button>
             </div>

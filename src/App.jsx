@@ -2991,22 +2991,6 @@ function App() {
     if (data) setMentorRequests(data);
   };
 
-  const handleRaiseHand = async () => {
-    if (!session?.user?.id) {
-      alert("Please login to raise a hand.");
-      return;
-    }
-    const { error } = await supabase.from('mentor_requests').insert([{
-      attendee_id: session.user.id,
-      mentor_id: null,
-      message: "Raised Hand for Assistance from ChatBot"
-    }]);
-    if (error) {
-      alert("Failed to raise hand: " + error.message);
-    } else {
-      alert("Your mentor request has been broadcasted to all mentors and admins!");
-    }
-  };
 
   const fetchAllMentors = async () => {
     const { data } = await supabase.from('mentors').select('*').eq('is_active', true);
@@ -11420,8 +11404,20 @@ function App() {
       ) : null}
       {/* chatbot */}
       <ChatBot 
-        onRaiseHand={handleRaiseHand} 
-        isRaiseHandEnabled={settings.raise_hand_enabled === 'true' && isLoggedIn && user?.role === 'attendee'} 
+        onCallMentor={() => {
+          setActiveView('landing');
+          setTimeout(() => {
+            const el = document.getElementById('mentors');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 300);
+        }}
+        onContactUs={() => {
+          setActiveView('landing');
+          setTimeout(() => {
+            const el = document.getElementById('contact');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 300);
+        }}
       />
       {showForgotPasswordPopup && (
         <div className="modal-overlay" onClick={() => setShowForgotPasswordPopup(false)}>
